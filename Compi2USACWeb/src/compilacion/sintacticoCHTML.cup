@@ -1,0 +1,182 @@
+package compilacion;
+import java_cup.runtime.*;
+import java.util.ArrayList;
+
+parser code
+{:
+    public AST ast;
+    //la lista global de errores del analizador
+    public ArrayList <ErrorCode> errores;
+
+    //nombre del archivo fuente
+    public String sourceFile;
+
+
+    public ParserCHTML(java_cup.runtime.Scanner s, String archivoFuente,  ArrayList <ErrorCode> errores){
+        super(s);
+        this.sourceFile = archivoFuente;
+        this.errores = errores;
+    }
+    
+    
+    public AST getAST(){
+        return ast;
+    }
+    
+
+    public ArrayList <ErrorCode> getErrores(){
+        return errores;
+    }
+
+    /**Metodo al que se llama automáticamente ante algún error sintactico.*/
+    public void syntax_error(Symbol s){
+
+        errores.add(new ErrorCode(TipoError.sintactico, s.left+1, s.right+1, String.valueOf(s.value), "Sintaxis erronea", sourceFile));
+        //System.err.println("Error de sintaxis en (" + (s.left+1) + ","+(s.right+1)+ "): " +s.value);
+    }
+   
+    /**Metodo al que se llama en el momento en que ya no es posible una recuperación de errores.*/
+    public void unrecovered_syntax_error(Symbol s) throws java.lang.Exception{
+        /* 
+            Posibles causas:
+                1- se encontró un error y no hay una posible reducción posterior al lugar donde se halló
+
+        */
+       errores.add(new ErrorCode(TipoError.sintactico, s.left+1, s.right+1, String.valueOf(s.value), "Sintaxis erronea", sourceFile));
+       //System.err.println("Error IRRECUPERABLE de sintaxis en (" + (s.left+1) + ", " +(s.right+1)+ "): " +s.value);
+    }
+:}
+
+action code
+{:
+
+:}
+
+terminal LT, GT;
+terminal chtml, encabezado, cjs, ccss, cuerpo, titulo, panel, texto, imagen, boton, enlace, tabla;
+terminal fila, celdaEnc, celda, areaTexto, cajaTexto, cajaOpciones, opcion, spinner, salto;
+terminal chtmlF, encabezadoF, cjsF, ccssF, cuerpoF, tituloF, panelF, textoF, imagenF, botonF, enlaceF, tablaF;
+terminal filaF, celdaEncF, celdaF, areaTextoF, cajaTextoF, cajaOpcionesF, opcionF, spinnerF;
+
+terminal ruta, fondo, click, id, grupo, alto, ancho, alineado, valor;
+
+terminal cadenaValor, ptoComa;
+
+terminal errorLex;
+
+non terminal S;
+non terminal NodoAST CHTML, ENCABEZADO, CUERPO, CJS, CCSS, TITULO, PANEL, TEXTO, IMAGEN, BOTON, ENLACE, TABLA;
+non terminal NodoAST FILA, CELDA_ENC, CELDA, AREA_TEXTO, CAJA_TEXTO, CAJA_OPCIONES, SPINNER, SALTO;
+non terminal NodoAST RUTA, FONDO, CLICK, ID, GRUPO, ALTO, ANCHO, ALINEADO, VALOR;
+non terminal NodoAST ERROR;
+start with S;
+
+S ::= CHTML:c{:
+    parser.ast = new AST();
+    parser.ast.raiz = c;
+:};
+
+CHTML ::= LT chtml:ch GT ENCABEZADO:e  CUERPO:c LT chtmlF:chf GT {:
+    RESULT = new NodoAST(TipoNodo.chtml, "CHTML", chleft, chright, parser.sourceFile, e, c);
+:};
+
+ENCABEZADO ::= LT encabezado:e encabezadoF:ef GT {:
+    RESULT = new NodoAST(TipoNodo.encabezado, "ENCABEZADO", eleft, eright, parser.sourceFile);
+:}
+| ERROR:e {:
+    RESULT = e;
+:};
+
+CUERPO ::= LT cuerpo:c cuerpoF:cf GT {:
+    RESULT = new NodoAST(TipoNodo.cuerpo, "CUERPO", cleft, cright, parser.sourceFile);
+:}
+| ERROR:e {:
+    RESULT = e;
+:};
+
+ERROR ::= error:e GT{:
+    RESULT = new NodoAST(TipoNodo.errorSintactico, "ERRS", eleft, eright, parser.sourceFile);
+:};
+/*
+PROGRAMA ::= ENCABEZADO:E BLOQUES:bloques {:
+    NodoAST nodoProg = new NodoAST(TipoNodo.programa, "PROGRAMA", Eleft, Eright, parser.sourceFile);
+    NodoAST nodoEnc = E;
+    nodoProg.hijos.addAll(E.hijos);
+    nodoProg.hijos.addAll(bloques.hijos);
+    RESULT = nodoProg;
+:};
+
+ENCABEZADO ::= PROGRAM:bloq BLOQUES_ENCABEZADO:bloques{:        
+    NodoAST nodoEncabezado = new NodoAST(TipoNodo.programa, "TEMP", bloqleft, bloqright, parser.sourceFile, bloq);
+    nodoEncabezado.hijos.addAll(bloques.hijos);
+    RESULT = nodoEncabezado;
+:}
+| PROGRAM:b {: RESULT = new NodoAST(TipoNodo.program, "PROGRAM", bleft, bright, parser.sourceFile, b); :}
+| ERROR_ENCABEZADO:e {: RESULT = new NodoAST(TipoNodo.programa, "TEMP", eleft, eright, parser.sourceFile, e); :};
+
+BLOQUES_ENCABEZADO ::=  BLOQUES_ENCABEZADO:bloqs BLOQUE_ENCABEZADO:bloq {:
+    NodoAST nodoProg = bloqs;
+    bloqs.agregarHijo(bloq);
+    RESULT = nodoProg;
+:}
+| BLOQUE_ENCABEZADO:b {:
+    RESULT = new NodoAST(TipoNodo.programa, "TEMP", bleft, bright, parser.sourceFile, b);
+:};
+
+BLOQUE_ENCABEZADO ::= DECLARACION_PRIMI:B {:RESULT = B;:} 
+| DECLARACION_MATRIZ:B {:RESULT = B;:} 
+| USES:B {:RESULT = B;:}
+;
+
+USES::= uses:u id:i extension ptoComa {: NodoAST nodoUses = new NodoAST(TipoNodo.uses, "uses", uleft, uright, parser.sourceFile,  
+    new NodoAST(TipoNodo.cadena, String.valueOf(i) + ".deco", ileft, iright, parser.sourceFile)); 
+    
+    //Se realiza un nuevo analisis sintactico el cula producirá un AST el cual será el segundo hijo de el nodo "uses"
+
+    AnalisisSintactico a = new AnalisisSintactico(String.valueOf(i) + ".deco", parser.errores);
+    a.generarAST();
+    AST ast = a.getAST();
+    if (ast != null){
+        if (ast.raiz != null)
+            nodoUses.agregarHijo(ast.raiz);
+    }else{
+        if (!a.existeArchivoFuente()){
+            ErrorCode error = new ErrorCode(TipoError.archivoNoEncontrado, ileft+1, iright+1, 
+                String.valueOf(i) + ".deco" , "Archivo no encontrado", parser.sourceFile);
+            parser.errores.add(error);
+        }
+    }
+    
+    RESULT = nodoUses;
+
+:};
+
+
+//----------------------------------ERROR-----------------------------------------
+ERROR_ENCABEZADO ::= error:e id ptoComa{: RESULT = new NodoAST(TipoNodo.errorSintactico, "errorSint", eleft, eright, parser.sourceFile); :}
+| error:e extension ptoComa{: RESULT = new NodoAST(TipoNodo.errorSintactico, "errorSint", eleft, eright, parser.sourceFile); :}
+| error:e parenC ptoComa{: RESULT = new NodoAST(TipoNodo.errorSintactico, "errorSint", eleft, eright, parser.sourceFile); :}
+| error:e end{: RESULT = new NodoAST(TipoNodo.errorSintactico, "errorSint", eleft, eright, parser.sourceFile); :};
+
+ERROR ::= error:e ptoComa{: RESULT = new NodoAST(TipoNodo.errorSintactico, "errorSint", eleft, eright, parser.sourceFile); :}
+|error:e end{: RESULT = new NodoAST(TipoNodo.errorSintactico, "errorSint", eleft, eright, parser.sourceFile); :};
+
+
+DECLARACION_PRIMI ::= var:v TIPO_DATO:t dosPtos IDS:l ptoComa{:    
+    NodoAST nodoDecla = new NodoAST(TipoNodo.declaracion, "DECL", vleft, vright, parser.sourceFile);
+    nodoDecla.agregarHijo(t);
+    ArrayList <NodoAST> listaIds = (ArrayList <NodoAST>)l;
+    for (NodoAST nodoId: listaIds){
+        nodoDecla.hijos.add(nodoId);
+    }
+    RESULT = nodoDecla;
+:}
+;
+
+TIPO_DATO ::= entero:t {: RESULT = new NodoAST(TipoNodo.entero, "int", tleft, tright, parser.sourceFile); :}
+| doble:t {: RESULT = new NodoAST(TipoNodo.doble, "double", tleft, tright, parser.sourceFile); :}
+| booleano:t {: RESULT = new NodoAST(TipoNodo.booleano, "bool", tleft, tright, parser.sourceFile); :}
+| caracter:t {: RESULT = new NodoAST(TipoNodo.caracter, "char", tleft, tright, parser.sourceFile); :}
+| cadena:t {: RESULT = new NodoAST(TipoNodo.cadena, "string", tleft, tright, parser.sourceFile); :}
+;
+*/

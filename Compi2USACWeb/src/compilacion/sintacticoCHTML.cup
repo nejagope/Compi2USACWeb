@@ -52,40 +52,194 @@ action code
 
 :}
 
-terminal LT, GT;
+terminal LT, GT, EQ;
 terminal chtml, encabezado, cjs, ccss, cuerpo, titulo, panel, texto, imagen, boton, enlace, tabla;
 terminal fila, celdaEnc, celda, areaTexto, cajaTexto, cajaOpciones, opcion, spinner, salto;
 terminal chtmlF, encabezadoF, cjsF, ccssF, cuerpoF, tituloF, panelF, textoF, imagenF, botonF, enlaceF, tablaF;
 terminal filaF, celdaEncF, celdaF, areaTextoF, cajaTextoF, cajaOpcionesF, opcionF, spinnerF;
 
-terminal ruta, fondo, click, id, grupo, alto, ancho, alineado, valor;
+terminal String ruta, fondo, click, id, grupo, alto, ancho, alineado, valor;
 
 terminal cadenaValor, ptoComa;
 
+terminal String elementoDesconocido, textoPlano;
 terminal errorLex;
 
 non terminal S;
 non terminal NodoAST CHTML, ENCABEZADO, CUERPO, CJS, CCSS, TITULO, PANEL, TEXTO, IMAGEN, BOTON, ENLACE, TABLA;
 non terminal NodoAST FILA, CELDA_ENC, CELDA, AREA_TEXTO, CAJA_TEXTO, CAJA_OPCIONES, SPINNER, SALTO;
 non terminal NodoAST RUTA, FONDO, CLICK, ID, GRUPO, ALTO, ANCHO, ALINEADO, VALOR;
-non terminal NodoAST ERROR;
+non terminal NodoAST TAGS_ENCABEZADO, TAG_ENCABEZADO, ERROR;
+
+non terminal NodoAST TAG, ATRIBS, ATRIB, NODO_CHTML, TAG_NAME, TAG_INI, TAG_FIN, TAG_FIN_NAME; 
+non terminal ArrayList<NodoAST> NODOS_CHTML;
+
+non terminal String ELEMENTO_NAME;
+
 start with S;
 
-S ::= CHTML:c{:
+//**********************************************************************************************************
+S ::= NODO_CHTML:n{:
     parser.ast = new AST();
-    parser.ast.raiz = c;
+    parser.ast.raiz = n;
 :};
 
-CHTML ::= LT chtml:ch GT ENCABEZADO:e  CUERPO:c LT chtmlF:chf GT {:
+NODOS_CHTML ::= NODOS_CHTML:es NODO_CHTML:e{:
+        ArrayList<NodoAST> nodos = es;
+        nodos.add(e);
+        RESULT = nodos;
+    :}
+    | NODO_CHTML:e{:
+        ArrayList<NodoAST> nodos = new ArrayList<NodoAST>();
+        nodos.add(e);
+        RESULT = nodos;
+    :};
+
+NODO_CHTML ::= TAG_INI:ta NODOS_CHTML:ns TAG_FIN:tc {:
+        ta.hijos.addAll(ns);
+        RESULT = ta;
+    :}
+    | TAG_INI:ta TAG_FIN:tc {:
+        RESULT = ta;
+    :}
+    | textoPlano:t {: RESULT = new NodoAST(TipoNodo.textoPlano, t, tleft, tright, parser.sourceFile); :}
+;
+
+TAG_INI ::= LT TAG_NAME:tn ATRIBS:atribs GT {:        
+        tn.agregarHijo(atribs);
+        RESULT = tn;
+    :}
+    | LT TAG_NAME:tn GT {:
+        RESULT = tn;
+    :}
+;
+
+
+TAG_FIN ::= LT TAG_FIN_NAME:tn GT {:
+        RESULT = tn;
+    :}
+;
+
+ATRIBS ::= ATRIBS:atribs ATRIB:atrib {:
+        NodoAST nodoAtribs = atribs;
+        nodoAtribs.agregarHijo(atrib);
+        RESULT = nodoAtribs;
+    :}
+    | ATRIB:atrib {:
+        RESULT = new NodoAST(TipoNodo.atribs, "ATRIBS", atribleft, atribright, parser.sourceFile, atrib);
+    :}
+;
+
+ATRIB ::= ELEMENTO_NAME:e EQ cadenaValor:c ptoComa {:
+        NodoAST nodoElemento = new NodoAST(TipoNodo.elemento, e, eleft, eright, parser.sourceFile);
+        NodoAST nodoValor = new NodoAST(TipoNodo.cadenaValor, c, cleft, cright, parser.sourceFile);
+        RESULT = new NodoAST(TipoNodo.atrib, "ATRIB", eleft, eright, parser.sourceFile, nodoElemento, nodoValor);
+    :}
+;
+
+TAG_NAME ::= 
+      chtml:n  {: RESULT = new NodoAST(TipoNodo.chtml, n, nleft, nright, parser.sourceFile); :}
+    | encabezado:n  {: RESULT = new NodoAST(TipoNodo.encabezado, n, nleft, nright, parser.sourceFile); :}    
+    | cjs:n  {: RESULT = new NodoAST(TipoNodo.cjs, n, nleft, nright, parser.sourceFile); :}
+    | ccss:n {: RESULT = new NodoAST(TipoNodo.ccss, n, nleft, nright, parser.sourceFile); :}
+    | cuerpo:n  {: RESULT = new NodoAST(TipoNodo.cuerpo, n, nleft, nright, parser.sourceFile); :}
+    | titulo:n  {: RESULT = new NodoAST(TipoNodo.titulo, n, nleft, nright, parser.sourceFile); :}
+    | panel:n  {: RESULT = new NodoAST(TipoNodo.panel, n, nleft, nright, parser.sourceFile); :}
+    | texto:n  {: RESULT = new NodoAST(TipoNodo.texto, n, nleft, nright, parser.sourceFile); :}
+    | imagen:n  {: RESULT = new NodoAST(TipoNodo.imagen, n, nleft, nright, parser.sourceFile); :}
+    | boton:n  {: RESULT = new NodoAST(TipoNodo.boton, n, nleft, nright, parser.sourceFile); :}
+    | enlace:n  {: RESULT = new NodoAST(TipoNodo.enlace, n, nleft, nright, parser.sourceFile); :}
+    | tabla:n  {: RESULT = new NodoAST(TipoNodo.tabla, n, nleft, nright, parser.sourceFile); :}
+    | fila:n  {: RESULT = new NodoAST(TipoNodo.fila, n, nleft, nright, parser.sourceFile); :}
+    | celdaEnc:n  {: RESULT = new NodoAST(TipoNodo.celdaEnc, n, nleft, nright, parser.sourceFile); :}
+    | celda:n  {: RESULT = new NodoAST(TipoNodo.celda, n, nleft, nright, parser.sourceFile); :}
+    | areaTexto:n  {: RESULT = new NodoAST(TipoNodo.areaTexto, n, nleft, nright, parser.sourceFile); :}
+    | cajaTexto:n  {: RESULT = new NodoAST(TipoNodo.cajaTexto, n, nleft, nright, parser.sourceFile); :}
+    | cajaOpciones:n  {: RESULT = new NodoAST(TipoNodo.cajaOpciones, n, nleft, nright, parser.sourceFile); :}
+    | opcion:n  {: RESULT = new NodoAST(TipoNodo.opcion, n, nleft, nright, parser.sourceFile); :}
+    | spinner:n  {: RESULT = new NodoAST(TipoNodo.spinner, n, nleft, nright, parser.sourceFile); :}
+    | salto:n  {: RESULT = new NodoAST(TipoNodo.salto, n, nleft, nright, parser.sourceFile); :}
+;
+
+TAG_FIN_NAME ::=
+      chtmlF:n  {: RESULT = new NodoAST(TipoNodo.chtmlF, n, nleft, nright, parser.sourceFile); :}
+    | encabezadoF:n  {: RESULT = new NodoAST(TipoNodo.encabezadoF, n, nleft, nright, parser.sourceFile); :}
+    | cjsF:n  {: RESULT = new NodoAST(TipoNodo.cjsF, n, nleft, nright, parser.sourceFile); :}
+    | ccssF:n {: RESULT = new NodoAST(TipoNodo.ccssF, n, nleft, nright, parser.sourceFile); :}
+    | cuerpoF:n  {: RESULT = new NodoAST(TipoNodo.cuerpoF, n, nleft, nright, parser.sourceFile); :}
+    | tituloF:n  {: RESULT = new NodoAST(TipoNodo.tituloF, n, nleft, nright, parser.sourceFile); :}
+    | panelF:n  {: RESULT = new NodoAST(TipoNodo.panelF, n, nleft, nright, parser.sourceFile); :}
+    | textoF:n  {: RESULT = new NodoAST(TipoNodo.textoF, n, nleft, nright, parser.sourceFile); :}
+    | imagenF:n  {: RESULT = new NodoAST(TipoNodo.imagenF, n, nleft, nright, parser.sourceFile); :}
+    | botonF:n  {: RESULT = new NodoAST(TipoNodo.botonF, n, nleft, nright, parser.sourceFile); :}
+    | enlaceF:n  {: RESULT = new NodoAST(TipoNodo.enlaceF, n, nleft, nright, parser.sourceFile); :}
+    | tablaF:n  {: RESULT = new NodoAST(TipoNodo.tablaF, n, nleft, nright, parser.sourceFile); :}
+    | filaF:n  {: RESULT = new NodoAST(TipoNodo.filaF, n, nleft, nright, parser.sourceFile); :}
+    | celdaEncF:n  {: RESULT = new NodoAST(TipoNodo.celdaEncF, n, nleft, nright, parser.sourceFile); :}
+    | celdaF:n  {: RESULT = new NodoAST(TipoNodo.celdaF, n, nleft, nright, parser.sourceFile); :}
+    | areaTextoF:n  {: RESULT = new NodoAST(TipoNodo.areaTextoF, n, nleft, nright, parser.sourceFile); :}
+    | cajaTextoF:n  {: RESULT = new NodoAST(TipoNodo.cajaTextoF, n, nleft, nright, parser.sourceFile); :}
+    | cajaOpcionesF:n  {: RESULT = new NodoAST(TipoNodo.cajaOpcionesF, n, nleft, nright, parser.sourceFile); :}
+    | opcionF:n  {: RESULT = new NodoAST(TipoNodo.opcionF, n, nleft, nright, parser.sourceFile); :}
+    | spinnerF:n  {: RESULT = new NodoAST(TipoNodo.spinnerF, n, nleft, nright, parser.sourceFile); :}
+;
+
+ELEMENTO_NAME ::=
+      ruta:n {: RESULT = n; :}
+    | fondo:n {: RESULT = n; :}
+    | click:n {: RESULT = n; :}
+    | id:n {: RESULT = n; :}
+    | grupo:n {: RESULT = n; :}    
+    | alto:n {: RESULT = n; :}
+    | ancho:n {: RESULT = n; :}        
+    | alineado:n {: RESULT = n; :}
+    | valor:n {: RESULT = n; :}
+    | elementoDesconocido:n {: RESULT = n; :}
+;
+    
+//**********************************************************************************************************
+/*
+CHTML ::= LT TAG_NAME:ch GT ENCABEZADO:e  CUERPO:c LT TAG_NAME:chf GT {:
     RESULT = new NodoAST(TipoNodo.chtml, "CHTML", chleft, chright, parser.sourceFile, e, c);
 :};
 
-ENCABEZADO ::= LT encabezado:e encabezadoF:ef GT {:
-    RESULT = new NodoAST(TipoNodo.encabezado, "ENCABEZADO", eleft, eright, parser.sourceFile);
+ENCABEZADO ::= LT TAG_NAME:e TAGS_ENCABEZADO:te TAG_NAME:ef GT {:    
+    RESULT = te;
 :}
 | ERROR:e {:
     RESULT = e;
 :};
+
+TAGS_ENCABEZADO ::= TAGS_ENCABEZADO:ts TAG_ENCABEZADO:t {:
+    NodoAST nodoEnc = ts;
+    ts.agregarHijo(t);
+:}
+|  TAG_ENCABEZADO:t {:    
+    RESULT = new NodoAST(TipoNodo.encabezado, "ENCABEZADO", eleft, eright, parser.sourceFile, t);         
+:};
+
+TAG_ENCABEZADO ::= CJS:c {:
+    RESULT = c;
+:}
+|CCSS:c {:
+    RESULT = c;
+:};
+
+
+CJS ::= LT cjs:c ELEMENTO:e GT LT cjsF GT{:
+    NodoAST nodoCjs = new NodoAST(TipoNodo.c, , cleft, cright, parser.sourceFile, e);         
+    RESULT = nodoCjs;
+:};
+
+CCSS ::= LT ccss:c ELEMENTO:e GT LT ccssF GT{:
+    NodoAST nodoCjs = new NodoAST(TipoNodo.c, , cleft, cright, parser.sourceFile, e);         
+    RESULT = nodoCjs;
+:};
+
+ELEMENTO ::= NOMBRE_ELEMENTO:e EQ cadenaValor:c {:
+    NodoAST nodoValor = new NodoAST(TipoNodo.cadenaValor, c, cleft, cright, parser.sourceFile);         
+    RESULT = new NodoAST(TipoNodo.elemento, e, eleft, eright, parser.sourceFile, nodoValor);         
+:}
 
 CUERPO ::= LT cuerpo:c cuerpoF:cf GT {:
     RESULT = new NodoAST(TipoNodo.cuerpo, "CUERPO", cleft, cright, parser.sourceFile);
@@ -97,6 +251,8 @@ CUERPO ::= LT cuerpo:c cuerpoF:cf GT {:
 ERROR ::= error:e GT{:
     RESULT = new NodoAST(TipoNodo.errorSintactico, "ERRS", eleft, eright, parser.sourceFile);
 :};
+*/
+
 /*
 PROGRAMA ::= ENCABEZADO:E BLOQUES:bloques {:
     NodoAST nodoProg = new NodoAST(TipoNodo.programa, "PROGRAMA", Eleft, Eright, parser.sourceFile);

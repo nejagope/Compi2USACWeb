@@ -61,6 +61,8 @@ blank = [ \r\t\f\n]
                     }
     
     {blank}+         {}
+
+    [^<]({blank}|[^<])*          {return simbolo(TokensCHTML.textoPlano, yytext().trim().replaceAll("\t", "").replaceAll("  ",""));}
     
     .              {return errorLexico(yytext(), "Caracter no reconocido");}    
 
@@ -119,6 +121,7 @@ blank = [ \r\t\f\n]
     "salto-fin"                 { return simbolo(TokensCHTML.salto , yytext());}
     
     /* ELEMENTOS */
+    
     "ruta"                 { return simbolo(TokensCHTML.ruta, yytext());}
     "fondo"                 { return simbolo(TokensCHTML.fondo, yytext());}
     "click"                 { return simbolo(TokensCHTML.click, yytext());}
@@ -127,7 +130,9 @@ blank = [ \r\t\f\n]
     "alto"                 { return simbolo(TokensCHTML.alto, yytext());}
     "ancho"                 { return simbolo(TokensCHTML.ancho, yytext());}
     "alineado"                 { return simbolo(TokensCHTML.alineado, yytext());}    
-    "valor"                 { return simbolo(TokensCHTML.valor, yytext());}    
+    "valor"                 { return simbolo(TokensCHTML.valor, yytext());} 
+    
+    [a-zA-Z][0-9a-zA-Z_-]*          {return simbolo(TokensCHTML.elementoDesconocido, yytext());}
     
     /* VALORES DE ELEMENTOS */
     /*inicio de un string, borra el buffer para poder crear la cadena nueva*/
@@ -135,6 +140,7 @@ blank = [ \r\t\f\n]
     \"             { string.setLength(0); yybegin(VALOR_ELEMENTO); }
 
     ";"                 { return simbolo(TokensCHTML.ptoComa, yytext());}
+    "="                 { return simbolo(TokensCHTML.EQ, yytext());}
 
     {blank}+         {}
 

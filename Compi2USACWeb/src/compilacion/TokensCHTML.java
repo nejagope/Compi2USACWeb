@@ -8,68 +8,72 @@ package compilacion;
 /** CUP generated class containing symbol constants. */
 public class TokensCHTML {
   /* terminals */
-  public static final int ancho = 51;
-  public static final int textoF = 32;
-  public static final int areaTexto = 19;
-  public static final int cjsF = 27;
-  public static final int fondo = 46;
-  public static final int enlaceF = 35;
-  public static final int imagen = 12;
-  public static final int celda = 18;
-  public static final int celdaEnc = 17;
-  public static final int alto = 50;
-  public static final int filaF = 37;
-  public static final int tituloF = 30;
+  public static final int ancho = 52;
+  public static final int textoF = 33;
+  public static final int areaTexto = 20;
+  public static final int cjsF = 28;
+  public static final int fondo = 47;
+  public static final int enlaceF = 36;
+  public static final int imagen = 13;
+  public static final int celda = 19;
+  public static final int textoPlano = 58;
+  public static final int celdaEnc = 18;
+  public static final int alto = 51;
+  public static final int filaF = 38;
+  public static final int tituloF = 31;
   public static final int LT = 2;
-  public static final int panel = 10;
-  public static final int botonF = 34;
-  public static final int grupo = 49;
-  public static final int alineado = 52;
-  public static final int ruta = 45;
-  public static final int errorLex = 56;
-  public static final int areaTextoF = 40;
-  public static final int ccss = 7;
-  public static final int fila = 16;
-  public static final int tabla = 15;
-  public static final int chtml = 4;
+  public static final int botonF = 35;
+  public static final int panel = 11;
+  public static final int grupo = 50;
+  public static final int alineado = 53;
+  public static final int ruta = 46;
+  public static final int errorLex = 59;
+  public static final int areaTextoF = 41;
+  public static final int ccss = 8;
+  public static final int fila = 17;
+  public static final int tabla = 16;
+  public static final int chtml = 5;
   public static final int EOF = 0;
-  public static final int cajaOpciones = 21;
+  public static final int cajaOpciones = 22;
   public static final int error = 1;
-  public static final int cadenaValor = 54;
-  public static final int valor = 53;
-  public static final int opcionF = 43;
-  public static final int cuerpo = 8;
-  public static final int spinner = 23;
-  public static final int click = 47;
-  public static final int tablaF = 36;
-  public static final int cajaTexto = 20;
-  public static final int chtmlF = 25;
-  public static final int id = 48;
-  public static final int opcion = 22;
-  public static final int cjs = 6;
-  public static final int panelF = 31;
-  public static final int enlace = 14;
-  public static final int cajaOpcionesF = 42;
-  public static final int titulo = 9;
-  public static final int encabezado = 5;
-  public static final int texto = 11;
-  public static final int ptoComa = 55;
-  public static final int celdaF = 39;
-  public static final int salto = 24;
-  public static final int cuerpoF = 29;
-  public static final int spinnerF = 44;
-  public static final int imagenF = 33;
-  public static final int boton = 13;
+  public static final int cadenaValor = 55;
+  public static final int valor = 54;
+  public static final int opcionF = 44;
+  public static final int cuerpo = 9;
+  public static final int EQ = 4;
+  public static final int spinner = 24;
+  public static final int click = 48;
+  public static final int tablaF = 37;
+  public static final int cajaTexto = 21;
+  public static final int chtmlF = 26;
+  public static final int id = 49;
+  public static final int opcion = 23;
+  public static final int cjs = 7;
+  public static final int panelF = 32;
+  public static final int enlace = 15;
+  public static final int cajaOpcionesF = 43;
+  public static final int titulo = 10;
+  public static final int encabezado = 6;
+  public static final int texto = 12;
+  public static final int ptoComa = 56;
+  public static final int celdaF = 40;
+  public static final int salto = 25;
+  public static final int elementoDesconocido = 57;
+  public static final int cuerpoF = 30;
+  public static final int spinnerF = 45;
+  public static final int imagenF = 34;
+  public static final int boton = 14;
   public static final int GT = 3;
-  public static final int celdaEncF = 38;
-  public static final int ccssF = 28;
-  public static final int encabezadoF = 26;
-  public static final int cajaTextoF = 41;
+  public static final int celdaEncF = 39;
+  public static final int ccssF = 29;
+  public static final int encabezadoF = 27;
+  public static final int cajaTextoF = 42;
   public static final String[] terminalNames = new String[] {
   "EOF",
   "error",
   "LT",
   "GT",
+  "EQ",
   "chtml",
   "encabezado",
   "cjs",
@@ -122,6 +126,8 @@ public class TokensCHTML {
   "valor",
   "cadenaValor",
   "ptoComa",
+  "elementoDesconocido",
+  "textoPlano",
   "errorLex"
   };
 }

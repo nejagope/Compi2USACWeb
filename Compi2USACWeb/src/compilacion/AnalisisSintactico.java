@@ -35,13 +35,21 @@ public class AnalisisSintactico {
     }
     
     public void generarAST(){          
-        ScannerCHTML scanner;
+        java_cup.runtime.Scanner scanner = null;
         try{
-            scanner= new ScannerCHTML(new FileInputStream(nombreArchivoFuente), nombreArchivoFuente, errores);
+            if (nombreArchivoFuente.endsWith(".chtml"))
+                scanner= new ScannerCHTML(new FileInputStream(nombreArchivoFuente), nombreArchivoFuente, errores);
+            else if (nombreArchivoFuente.endsWith(".cjs"))
+                scanner= new ScannerCJS(new FileInputStream(nombreArchivoFuente), nombreArchivoFuente, errores);
         }catch(Exception ex){             
             return;
         }
-        ParserCHTML parser = new ParserCHTML(scanner, nombreArchivoFuente, errores);
+        java_cup.runtime.lr_parser parser = null;
+        if (nombreArchivoFuente.endsWith(".chtml"))
+            parser = new ParserCHTML(scanner, nombreArchivoFuente, errores);
+        else if (nombreArchivoFuente.endsWith(".cjs"))
+            parser = new ParserCJS(scanner, nombreArchivoFuente, errores);
+        
         try{
             parser.parse();        
         }catch(Exception ex){
@@ -49,7 +57,11 @@ public class AnalisisSintactico {
             System.err.println(ex);
             return;
         }
-        ast = parser.getAST();
+        if (nombreArchivoFuente.endsWith(".chtml"))
+            ast = ((ParserCHTML)parser).getAST();
+        else if (nombreArchivoFuente.endsWith(".cjs"))
+            ast = ((ParserCJS)parser).getAST();
+        
         
         indiceNodo = 0;
         if (ast!= null)

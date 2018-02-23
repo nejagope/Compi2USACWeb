@@ -46,15 +46,17 @@ import java.util.ArrayList;
     }
 %}
 
-blank = [ \r\t\f\n]
+finLinea = \r|\n|\r\n
+blank = [ \t\f]
 
-%state STRING, COMENTARIO, ETIQUETA, VALOR_ELEMENTO
+%state STRING, COMENTARIO, COMENTARIO_MULTILINEA, ETIQUETA, VALOR_ELEMENTO
 
 %%
 
 <YYINITIAL> {
     /*inicio de un comentario multilinea */
-    "<//-"          { yybegin(COMENTARIO); }    
+    "//"          { yybegin(COMENTARIO); }    
+    "/*"          { yybegin(COMENTARIO_MULTILINEA); }    
 
     "<" {blank}* "fin-salto" {blank}* ">"       {                         
                         return simbolo(TokensCHTML.salto, "fin-salto");
@@ -180,10 +182,19 @@ blank = [ \r\t\f\n]
 }
 
 <COMENTARIO> {
-    "-//>"  { yybegin(YYINITIAL);}             
+    {finLinea}  { yybegin(YYINITIAL);}             
     [^°]  {}
     <<EOF>>         {
                         yybegin(YYINITIAL);
-                        return errorLexico("", "Comentario no cerrado");
+                        return simbolo(TokensCHTML.EOF);
+                    }
+}
+
+<COMENTARIO_MULTILINEA> {
+    "*/"  { yybegin(YYINITIAL);}             
+    [^°]  {}
+    <<EOF>>         {
+                        yybegin(YYINITIAL);
+                        return simbolo(TokensCHTML.EOF);
                     }
 }

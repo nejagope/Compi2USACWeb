@@ -18,5 +18,14 @@ public enum TipoNodo {
     elementoDesconocido,
     atrib, atribs,
     textoPlano,
-    errorSintactico
+    errorSintactico,
+    
+    //cjs
+    programa, divV, salir, defecto, sentencia, sentencias, funcion, parametros, llamadaFuncion, identificador,
+    
+    enteroLit, dobleLit, booleanoLit, caracterLit, cadenaLit,
+    not, or, and,
+    igual, diferente, mayor, mayorI, menorI, menor,
+    inc, dec, negativo, potencia, entre, por, mas, menos,
+    asignacion,
 }

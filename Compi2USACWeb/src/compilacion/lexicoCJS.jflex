@@ -17,7 +17,7 @@ import java.util.ArrayList;
     ArrayList <ErrorCode> errores;
     String sourceFile;
 
-    public Scanner(java.io.InputStream is, String archivoFuente, ArrayList <ErrorCode> errores){
+    public ScannerCJS(java.io.InputStream is, String archivoFuente, ArrayList <ErrorCode> errores){
         this(new java.io.InputStreamReader(is));      
         this.sourceFile = archivoFuente;
         this.errores = errores;
@@ -30,13 +30,16 @@ import java.util.ArrayList;
     StringBuffer string = new StringBuffer();
 
     private Symbol simbolo(int type) {
+        System.out.println(TokensCJS.terminalNames[type] + " - " + (yyline+1)+ " - " + (yycolumn+1));
         return new Symbol(type, yyline, yycolumn);
     }
     private Symbol simbolo(int type, Object value) {
+        System.out.println(TokensCJS.terminalNames[type] + " - " + (yyline+1)+ " - " + (yycolumn+1) + " - " + value);
         return new Symbol(type, yyline, yycolumn, value);
     }
 
     private Symbol errorLexico(String cadena, String mensaje){
+        System.out.println("Error léxico - " + (yyline+1) + " - " + (yycolumn+1) + " - " + cadena);
         errores.add(new ErrorCode(TipoError.lexico, yyline + 1, yycolumn +1, cadena, "Caracter no reconocido", this.sourceFile));
         //System.err.println(mensaje + ": \""+ cadena + "\" (" + (yyline + 1) + "," + (yycolumn +1) + ")");
         return new Symbol(TokensCJS.errorLex, yyline, yycolumn, cadena);
@@ -74,7 +77,8 @@ id = {letra} ({letra} | "_" | {entero})*
     "dimv"          { return simbolo(TokensCJS.dimV, yytext());}
     ":"          { return simbolo(TokensCJS.dosPtos, yytext());}
     ";"          { return simbolo(TokensCJS.ptoComa, yytext());}
-
+    
+    "="             { return simbolo(TokensCJS.asignacion, yytext());}
     "*"             { return simbolo(TokensCJS.por, yytext());}
     "+"             { return simbolo(TokensCJS.mas, yytext());}
     "-"             { return simbolo(TokensCJS.menos, yytext());}
@@ -112,7 +116,7 @@ id = {letra} ({letra} | "_" | {entero})*
     "mientras"          { return simbolo(TokensCJS.mientras, yytext());}
     "detener"          { return simbolo(TokensCJS.salir, yytext());}  
 
-    "funcion"          { return simbolo(TokensCJS.function, yytext());}
+    "funcion"          { return simbolo(TokensCJS.funcion, yytext());}
     "retornar"          { return simbolo(TokensCJS.retornar, yytext());}
     
     "."          { return simbolo(TokensCJS.punto, yytext());}

@@ -17,6 +17,22 @@ public class NodoAST {
     Object valor;    
     ArrayList <NodoAST> hijos;
     
+    @Override
+    public String toString(){
+        String lexemaRed = lexema.concat("");        
+        if (lexemaRed.length() > 10){
+            lexemaRed = lexemaRed.substring(0,10) + "...";
+        }
+        String cad = " <table border=\"0\" cellborder=\"1\" cellspacing=\"0\">" +
+                "       <tr><td bgcolor=\"yellow\">" + tipo.toString() + "</td></tr>" +
+                "       <tr><td bgcolor=\"lightblue\"><font color=\"#0000ff\">" + lexemaRed + "</font></td></tr>" +
+                "       <tr><td bgcolor=\"#f0e3ff\"><font color=\"#ff1020\">"+ (valor==null?"":(valor.getClass().getName())) + "</font></td></tr>" +
+                "     </table>";
+        
+        //return cad;
+        return tipo.toString() + "\n" + (lexema==null?"":lexema)+ "\n" + (valor==null?"":(valor.getClass().getName())) ;        
+    }
+    
     public NodoAST(TipoNodo tipo, String lexema, int linea, int columna, String archivoFuente){
         this.tipo = tipo;
         this.lexema = lexema;

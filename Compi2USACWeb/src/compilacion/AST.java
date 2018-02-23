@@ -26,7 +26,7 @@ public class AST {
     public void generarArchivoDot(){
         try{
             FileWriter escritor = new FileWriter( rutaGrafo + "AST.dot");
-            escritor.write("graph AST{\n");
+            escritor.write("graph AST{node[fontsize=10, shape=rectangle];\n");
             agregarNodosArchivoDot(raiz, escritor);
             escritor.write("}");
             escritor.close();
@@ -37,7 +37,8 @@ public class AST {
     private void agregarNodosArchivoDot(NodoAST nodo, FileWriter escritor) throws Exception{
         if (nodo == null)
             return;        
-        escritor.write(nodo.id + " [label=\"" + nodo.lexema + "\"];\n");
+        //escritor.write(nodo.id + " [label=<" + nodo.toString() + ">];\n");
+        escritor.write(nodo.id + " [label=\"" + nodo.toString()+ "\"];\n");
         for(NodoAST hijo: nodo.hijos){
             escritor.write(nodo.id + " -- " + hijo.id + ";\n");
             agregarNodosArchivoDot(hijo, escritor);

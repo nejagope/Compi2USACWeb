@@ -62,8 +62,8 @@ id = {letra} ({letra} | "_" | {entero})*
     /* booleanos */
     \'true\'             { return simbolo(TokensCJS.booleanoLiteral, true);}
     \'false\'             { return simbolo(TokensCJS.booleanoLiteral, false);}
-    \'{entero}"/"{entero}"/"{entero}\'             { return simbolo(TokensCJS.dateLiteral, yytext());}
-    \'{entero}"/"{entero}"/"{entero} " " {entero}":"{entero}":"{entero}\'             { return simbolo(TokensCJS.dateTimeLiteral, yytext());}
+    \'{entero}"/"{entero}"/"{entero}\'             { return simbolo(TokensCJS.dateLiteral, yytext().substring(1, yytext().length() - 1));}
+    \'{entero}"/"{entero}"/"{entero} " " {entero}":"{entero}":"{entero}\'             { return simbolo(TokensCJS.dateTimeLiteral, yytext().substring(1, yytext().length() - 1));}
     /*inicio de un comentario multilinea */
     "'/" { yybegin(COMENTARIO_MULTI); }
 
@@ -77,8 +77,7 @@ id = {letra} ({letra} | "_" | {entero})*
     "dimv"          { return simbolo(TokensCJS.dimV, yytext());}
     ":"          { return simbolo(TokensCJS.dosPtos, yytext());}
     ";"          { return simbolo(TokensCJS.ptoComa, yytext());}
-    
-    "="             { return simbolo(TokensCJS.asignacion, yytext());}
+        
     "*"             { return simbolo(TokensCJS.por, yytext());}
     "+"             { return simbolo(TokensCJS.mas, yytext());}
     "-"             { return simbolo(TokensCJS.menos, yytext());}
@@ -108,13 +107,13 @@ id = {letra} ({letra} | "_" | {entero})*
 
     "si"            { return simbolo(TokensCJS.si, yytext());}      
     "sino"          { return simbolo(TokensCJS.sino, yytext());}
-    "seleccciona"          { return simbolo(TokensCJS.select, yytext());}  
+    "selecciona"          { return simbolo(TokensCJS.select, yytext());}  
     "caso"          { return simbolo(TokensCJS.caso, yytext());}  
     "defecto"          { return simbolo(TokensCJS.defecto, yytext());}  
     
     "para"          { return simbolo(TokensCJS.para, yytext());}    
     "mientras"          { return simbolo(TokensCJS.mientras, yytext());}
-    "detener"          { return simbolo(TokensCJS.salir, yytext());}  
+    "detener"          { return simbolo(TokensCJS.detener, yytext());}  
 
     "funcion"          { return simbolo(TokensCJS.funcion, yytext());}
     "retornar"          { return simbolo(TokensCJS.retornar, yytext());}
@@ -173,11 +172,3 @@ id = {letra} ({letra} | "_" | {entero})*
     <<EOF>> { yybegin(YYINITIAL);}    
     [^°]  {}
 }
-
-/* error */
-.|\n              { /* throw new RuntimeException("Illegal character \""+yytext()+
-                    "\" at line "+yyline+", column "+yycolumn); */
-                    return errorLexico(yytext(), "Caracter no reconocido");
-                  }
-
-/*<<EOF>>                          { return simbolo(TokensCJS.EOF); }*/

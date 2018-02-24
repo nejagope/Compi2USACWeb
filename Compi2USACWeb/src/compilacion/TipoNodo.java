@@ -23,9 +23,10 @@ public enum TipoNodo {
     //cjs
     programa, divV, salir, defecto, sentencia, sentencias, funcion, parametros, llamadaFuncion, identificador,
     
-    enteroLit, dobleLit, booleanoLit, caracterLit, cadenaLit,
+    enteroLit, dobleLit, booleanoLit, caracterLit, cadenaLit, fechaLit, fechaTiempoLit, arregloLiteral,
     not, or, and,
     igual, diferente, mayor, mayorI, menorI, menor,
     inc, dec, negativo, potencia, entre, por, mas, menos,
-    asignacion,
+    
+    asignacion, declaracion, si, selecciona, caso, para, mientras, detener, retornar, args,
 }

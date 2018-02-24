@@ -1,7 +1,12 @@
 package compilacion;
 import java_cup.runtime.*;
 import java.util.ArrayList;
-
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 parser code
 {:
@@ -54,21 +59,19 @@ terminal booleanoLiteral, dobleLiteral, enteroLiteral, cadenaLiteral, dateLitera
 terminal mas, por, menos, entre, potencia, inc, dec, mayor, menor, mayorI, menorI, igual, diferente, and, or, not;
 terminal parenA, parenC, llaveA, llaveC;
 terminal SIGNO;
-terminal var, dosPtos, ptoComa, coma, asignacion, si, sino;
+terminal var, dosPtos, ptoComa, coma, si, sino;
 terminal select, caso, mientras, para, detener;
 terminal funcion, retornar, punto;
 
-terminal dimV, defecto, salir;
+terminal dimV, defecto;
 
 non terminal S , IDS, DIMENSIONES, DIMENSION, EXPRESIONES, INDICE_MATRIZ, INDICES_MATRIZ;
 non terminal NodoAST SENTENCIA, EXP, ASIGNACION, DECLARACION, TIPO_DATO, DECLARACION_MATRIZ, DECLARACION_PRIMI;
 non terminal NodoAST MATRIZ_LITERAL, BLOQUE_SENTENCIAS, IF, IF_ELSE, IF_ELSEIF, ELSEIFS, ELSEIF, SELECT, CASO, DECLARACIONES;
 non terminal NodoAST WHILE, DO_WHILE, INC_DEC, REPEAT, LOOP, FOR, PROCEDURE, FUNCION;
 non terminal NodoAST SET_OF_PARAMETROS, SETS_OF_PARAMETROS, LLAMADA, ARGUMENTOS, ERROR, BLOQUES, BLOQUE, USES, PROGRAMA, PROGRAM;
-non terminal NodoAST ENCABEZADO, BLOQUE_ENCABEZADO, BLOQUES_ENCABEZADO, ERROR_ENCABEZADO, INSTRUCCION, SENTENCIAS, PARAMETROS;
-non terminal ArrayList<NodoAST> INSTRUCCIONES;
-
-non terminal CASOS;
+non terminal NodoAST ENCABEZADO, BLOQUE_ENCABEZADO, BLOQUES_ENCABEZADO, ERROR_ENCABEZADO, INSTRUCCION, SENTENCIAS, PARAMETROS, ARREGLO_LITERAL, MONO_OPERADOR;
+non terminal ArrayList<NodoAST> INSTRUCCIONES, CASOS, EXPRS;
 
 precedence left or;
 precedence left and;
@@ -138,7 +141,10 @@ PARAMETROS ::= PARAMETROS:ps coma id:p {:
         
 BLOQUE ::= llaveA:la SENTENCIAS:s llaveC {:        
         RESULT = s;
-    :}     
+    :}
+    | llaveA:la llaveC:lc {:    
+        RESULT = new NodoAST(TipoNodo.sentencias, "SENTS", laleft, laright, parser.sourceFile);                 
+    :}    
 ;
 
 SENTENCIAS ::= SENTENCIAS:ss SENTENCIA:s {:        
@@ -150,19 +156,124 @@ SENTENCIAS ::= SENTENCIAS:ss SENTENCIA:s {:
     :}
 ;
 
-SENTENCIA ::=     
-    ASIGNACION:s {: RESULT = s; :}        
-    | id:i parenA parenC ptoComa {:
-        RESULT = new NodoAST(TipoNodo.llamadaFuncion, "LLAMADA", ileft, iright, parser.sourceFile);  
-    :}
+SENTENCIA ::= 
+    DECLARACION:s  {: RESULT = s; :}        
+    | ASIGNACION:s ptoComa{: RESULT = s; :}        
+    | LLAMADA:s ptoComa{: RESULT = s; :}
+    | IF:s {: RESULT = s; :}
+    | SELECT:s {: RESULT = s; :}
+    | FOR:s {: RESULT = s; :}
+    | WHILE:s {: RESULT = s; :}
+    | retornar:r EXP:e ptoComa {: RESULT = new NodoAST(TipoNodo.retornar, r, rleft, rright , parser.sourceFile, e); :}
+    | detener:d ptoComa {: RESULT = new NodoAST(TipoNodo.detener, d, dleft, dright , parser.sourceFile); :}
+    | error:e ptoComa {: RESULT = new NodoAST(TipoNodo.errorSintactico, "ERR", eleft, eright , parser.sourceFile);:}
 ;
 
-ASIGNACION ::= id:i asignacion EXP:e ptoComa {:
+DECLARACION ::= dimV:d id:i ptoComa {:
         NodoAST nodoID = new NodoAST(TipoNodo.identificador, i, ileft, iright , parser.sourceFile);
-        RESULT = new NodoAST(TipoNodo.asignacion, "=", ileft, iright,parser.sourceFile, nodoID, e);
+        RESULT = new NodoAST(TipoNodo.declaracion, "DIM", dleft, dright , parser.sourceFile, nodoID);        
+        
+    :}
+    | dimV:d id:i llaveA EXP:e llaveC ptoComa {:
+        NodoAST nodoID = new NodoAST(TipoNodo.identificador, i, ileft, iright , parser.sourceFile);
+        RESULT = new NodoAST(TipoNodo.declaracion, "DIM", dleft, dright , parser.sourceFile, nodoID, e);        
+        
+    :}
+    | dimV:d ASIGNACION:a ptoComa{:
+        RESULT = new NodoAST(TipoNodo.declaracion, "DIM", dleft, dright , parser.sourceFile, a);        
     :}
 ;
 
+ASIGNACION ::= id:i dosPtos EXP:e  {:
+        NodoAST nodoID = new NodoAST(TipoNodo.identificador, i, ileft, iright , parser.sourceFile);
+        RESULT = new NodoAST(TipoNodo.asignacion, ":", ileft, iright,parser.sourceFile, nodoID, e);
+    :}
+;
+
+LLAMADA ::= id:i parenA parenC  {:
+        RESULT = new NodoAST(TipoNodo.llamadaFuncion, i, ileft, iright, parser.sourceFile);  
+    :}
+    | id:i parenA EXPRS:es parenC  {:
+        NodoAST nodoArgs = new NodoAST(TipoNodo.args, "ARGS", esleft, esright, parser.sourceFile); 
+        nodoArgs.hijos.addAll(es);
+        NodoAST nodo = new NodoAST(TipoNodo.llamadaFuncion, i, ileft, iright, parser.sourceFile, nodoArgs);          
+        RESULT = nodo;
+    :}
+    | id:i punto id:f parenA parenC  {:
+        NodoAST nodoID = new NodoAST(TipoNodo.identificador, i, ileft, iright , parser.sourceFile);
+        RESULT = new NodoAST(TipoNodo.llamadaFuncion, f, fleft, fright, parser.sourceFile, nodoID);  
+    :}
+    | id:i punto id:f parenA EXPRS:es parenC  {:
+        NodoAST nodoID = new NodoAST(TipoNodo.identificador, i, ileft, iright , parser.sourceFile);
+        NodoAST nodoArgs = new NodoAST(TipoNodo.args, "ARGS", esleft, esright, parser.sourceFile); 
+        nodoArgs.hijos.addAll(es);
+        RESULT = new NodoAST(TipoNodo.llamadaFuncion, f, fleft, fright, parser.sourceFile, nodoID, nodoArgs);                  
+    :}
+;
+
+IF ::= si:s parenA EXP:e parenC BLOQUE:b1 {:
+        RESULT = new NodoAST(TipoNodo.si, "SI", sleft, sright, parser.sourceFile, e, b1);  
+    :}
+    | si:s parenA EXP:e parenC BLOQUE:b1 sino BLOQUE:b2{:
+        NodoAST nodoIF  = new NodoAST(TipoNodo.si, "SI", sleft, sright, parser.sourceFile, e, b1);  
+        nodoIF.agregarHijo(b2);
+        RESULT = nodoIF;
+    :}
+;
+
+
+
+//------------------------------------SELECCION
+
+SELECT ::= select:s parenA EXP:e parenC llaveA CASOS:casos llaveC {:
+        NodoAST nodoSelect = new NodoAST(TipoNodo.selecciona, "SELECCIONA", sleft, sright, parser.sourceFile, e);    
+        nodoSelect.hijos.addAll(casos);
+        RESULT = nodoSelect;
+    :}
+;
+
+CASOS ::= CASOS:lista CASO:c {:    
+        lista.add(c);
+        RESULT = lista;
+    :}
+    | CASO:c{:
+        ArrayList<NodoAST> casos = new ArrayList();
+        casos.add(c);
+        RESULT = casos;
+    :}
+;
+
+CASO ::= caso EXP:e dosPtos SENTENCIAS:s{:
+        RESULT= new NodoAST(TipoNodo.caso, "CASO", eleft, eright, parser.sourceFile, e, s);        
+    :} 
+    | defecto:d dosPtos SENTENCIAS:s{:
+        RESULT = new NodoAST(TipoNodo.caso, "DEFECTO", dleft, dright, parser.sourceFile, s);    
+    :}
+    | caso EXP:e dosPtos BLOQUE:s{:
+        RESULT= new NodoAST(TipoNodo.caso, "CASO", eleft, eright, parser.sourceFile, e, s);        
+    :} 
+    | defecto:d dosPtos BLOQUE:s{:
+        RESULT = new NodoAST(TipoNodo.caso, "DEFECTO", dleft, dright, parser.sourceFile, s);    
+    :}
+;
+
+FOR ::= para:p parenA ASIGNACION:asig ptoComa EXP:cond ptoComa MONO_OPERADOR:op parenC BLOQUE:b{:
+        RESULT = new NodoAST(TipoNodo.para, "PARA", pleft, pright, parser.sourceFile, new NodoAST[]{asig, cond, op, b});    
+    :}
+;
+
+WHILE ::= mientras:m parenA EXP:cond parenC BLOQUE:b{:
+        RESULT = new NodoAST(TipoNodo.mientras, "MIENTRAS", mleft, mright, parser.sourceFile, cond, b);    
+    :}
+;
+
+MONO_OPERADOR ::= inc:o {:
+        RESULT = new NodoAST(TipoNodo.inc, String.valueOf(o), oleft, oright, parser.sourceFile);    
+    :}
+    | dec:o {:
+        RESULT = new NodoAST(TipoNodo.dec, String.valueOf(o), oleft, oright, parser.sourceFile);    
+    :}
+;
 EXP ::= EXP:e1 mas:op EXP:e2{:
         RESULT = new NodoAST(TipoNodo.mas, String.valueOf(op), opleft, opright, parser.sourceFile, (NodoAST)e1, (NodoAST)e2);
     :}
@@ -220,6 +331,31 @@ EXP ::= EXP:e1 mas:op EXP:e2{:
     | booleanoLiteral:b{:
         RESULT = new NodoAST(TipoNodo.booleanoLit, b, bleft, bright, parser.sourceFile);         
     :}
+    | dateLiteral:d{:
+        DateTimeFormatter f = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        LocalDate date = LocalDate.parse("01/01/1970", f);
+        
+        String dateInString = d.toString();        
+        try {
+             date = LocalDate.parse(dateInString, f);           
+        } catch (Exception e) {
+            errores.add(new ErrorCode(TipoError.lexico, dleft+1, dright+1, d.toString(), "Formato de fecha incorrecto", parser.sourceFile));
+            //e.printStackTrace();
+        }
+        RESULT = new NodoAST(TipoNodo.fechaLit, date, dleft, dright, parser.sourceFile);         
+    :}
+    | dateTimeLiteral:d{:
+        DateTimeFormatter f = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+        LocalDateTime date = LocalDateTime.parse("01/01/1970 00:00:00", f);
+        
+        String dateInString = d.toString();        
+        try {
+             date = LocalDateTime.parse(dateInString, f);           
+        } catch (Exception e) {
+            errores.add(new ErrorCode(TipoError.lexico, dleft+1, dright+1, d.toString(), "Formato de fecha incorrecto", parser.sourceFile));            
+        }
+        RESULT = new NodoAST(TipoNodo.fechaLit, date, dleft, dright, parser.sourceFile);         
+    :}
     | cadenaLiteral:c{:
         RESULT = new NodoAST(TipoNodo.cadenaLit, c, cleft, cright - 1, parser.sourceFile); 
         //el -1 porque no se incluye la comilla inicial en el token    
@@ -227,6 +363,36 @@ EXP ::= EXP:e1 mas:op EXP:e2{:
     | id:i{:
         RESULT = new NodoAST(TipoNodo.identificador, i, ileft, iright, parser.sourceFile);     
     :}
+    | ARREGLO_LITERAL:a{:
+        RESULT = a;     
+    :}
+    | LLAMADA:l{:
+        RESULT = l;     
+    :}
+    | id:i llaveA EXP:e llaveC{:
+        RESULT = new NodoAST(TipoNodo.identificador, i, ileft, iright, parser.sourceFile, e);     
+    :}
+    | id:i1 punto id:i2{:
+        NodoAST nodoID2 = new NodoAST(TipoNodo.identificador, i2, i2left, i2right, parser.sourceFile );     
+        RESULT = new NodoAST(TipoNodo.identificador, i1, i1left, i1right, parser.sourceFile, nodoID2);             
+    :}
 ;
 
 
+ARREGLO_LITERAL ::= llaveA:l EXPRS:es llaveC{:
+        NodoAST arreglo = new NodoAST(TipoNodo.arregloLiteral, "{}", lleft, lright, parser.sourceFile);     
+        arreglo.hijos.addAll(es);
+        RESULT = arreglo;
+    :}
+;
+
+EXPRS ::= EXPRS:es coma EXP:e {:
+        es.add(e);
+        RESULT = es;
+    :}
+    | EXP:e {:
+        ArrayList<NodoAST> exprs = new ArrayList();
+        exprs.add(e);
+        RESULT = exprs;
+    :}
+;

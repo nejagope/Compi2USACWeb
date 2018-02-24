@@ -57,8 +57,26 @@ public class NodoAST {
         this.archivoFuente = archivoFuente;
     }
     
+    
+    /**CREA UN nodo y le agrega 3 hijos*/
+    public NodoAST(TipoNodo tipo, Object valor, int linea, int columna, String archivoFuente, NodoAST[] hijos){
+        this.valor = valor;
+        this.tipo = tipo;
+        this.lexema = valor.toString();
+        this.linea = linea + 1;        
+        //this.columna = columna - lexema.length() + 1;        
+        this.columna = columna + 1;
+        id = this.hashCode();
+        this.hijos = new ArrayList<NodoAST>();
+        for (NodoAST hijo : hijos){
+            this.hijos.add(hijo);
+        }
+        
+        this.archivoFuente = archivoFuente;
+    }
+    
     /**CREA UN nodo y le agrega dos hijos*/
-    public NodoAST(TipoNodo tipo, Object valor, int linea, int columna, String archivoFuente, NodoAST hijo1, NodoAST hijo2){
+    public NodoAST(TipoNodo tipo, Object valor, int linea, int columna, String archivoFuente, NodoAST hijo1, NodoAST hijo2){        
         this.valor = valor;
         this.tipo = tipo;
         this.lexema = valor.toString();

@@ -59,18 +59,18 @@ terminal booleanoLiteral, dobleLiteral, enteroLiteral, cadenaLiteral, dateLitera
 terminal mas, por, menos, entre, potencia, inc, dec, mayor, menor, mayorI, menorI, igual, diferente, and, or, not;
 terminal parenA, parenC, llaveA, llaveC;
 terminal SIGNO;
-terminal var, dosPtos, ptoComa, coma, si, sino;
+terminal dosPtos, ptoComa, coma, si, sino;
 terminal select, caso, mientras, para, detener;
 terminal funcion, retornar, punto;
 
 terminal dimV, defecto;
 
-non terminal S , IDS, DIMENSIONES, DIMENSION, EXPRESIONES, INDICE_MATRIZ, INDICES_MATRIZ;
-non terminal NodoAST SENTENCIA, EXP, ASIGNACION, DECLARACION, TIPO_DATO, DECLARACION_MATRIZ, DECLARACION_PRIMI;
-non terminal NodoAST MATRIZ_LITERAL, BLOQUE_SENTENCIAS, IF, IF_ELSE, IF_ELSEIF, ELSEIFS, ELSEIF, SELECT, CASO, DECLARACIONES;
-non terminal NodoAST WHILE, DO_WHILE, INC_DEC, REPEAT, LOOP, FOR, PROCEDURE, FUNCION;
-non terminal NodoAST SET_OF_PARAMETROS, SETS_OF_PARAMETROS, LLAMADA, ARGUMENTOS, ERROR, BLOQUES, BLOQUE, USES, PROGRAMA, PROGRAM;
-non terminal NodoAST ENCABEZADO, BLOQUE_ENCABEZADO, BLOQUES_ENCABEZADO, ERROR_ENCABEZADO, INSTRUCCION, SENTENCIAS, PARAMETROS, ARREGLO_LITERAL, MONO_OPERADOR;
+non terminal S;
+non terminal NodoAST SENTENCIA, EXP, ASIGNACION, DECLARACION;
+non terminal NodoAST IF, SELECT, CASO;
+non terminal NodoAST WHILE, FOR, FUNCION, FUNCION_ANONIMA;
+non terminal NodoAST LLAMADA, BLOQUE, PROGRAMA;
+non terminal NodoAST INSTRUCCION, SENTENCIAS, PARAMETROS, ARREGLO_LITERAL, MONO_OPERADOR;
 non terminal ArrayList<NodoAST> INSTRUCCIONES, CASOS, EXPRS;
 
 precedence left or;
@@ -126,6 +126,11 @@ FUNCION ::= funcion:f id:i parenA PARAMETROS:ps parenC BLOQUE:b {:
     :}
     | funcion:f id:i parenA parenC BLOQUE:b   {:
         RESULT = new NodoAST(TipoNodo.funcion, i, fleft, fright, parser.sourceFile, b);  
+    :}
+;
+
+FUNCION_ANONIMA ::= funcion:f parenA parenC BLOQUE:b {:
+        RESULT = new NodoAST(TipoNodo.funcionAnonima, "FUNCION_ANONIMA", fleft, fright, parser.sourceFile, b);  
     :}
 ;
 
@@ -209,6 +214,16 @@ LLAMADA ::= id:i parenA parenC  {:
         nodoArgs.hijos.addAll(es);
         RESULT = new NodoAST(TipoNodo.llamadaFuncion, f, fleft, fright, parser.sourceFile, nodoID, nodoArgs);                  
     :}
+    | id:i punto id:f parenA EXPRS:es parenC punto id:f2 parenA EXPRS:es2 parenC {:
+        NodoAST nodoID = new NodoAST(TipoNodo.identificador, i, ileft, iright , parser.sourceFile);
+        NodoAST nodoArgs = new NodoAST(TipoNodo.args, "ARGS", esleft, esright, parser.sourceFile); 
+        nodoArgs.hijos.addAll(es);
+        NodoAST nodoLlamada1 = new NodoAST(TipoNodo.llamadaFuncion, f, fleft, fright, parser.sourceFile, nodoID, nodoArgs);                  
+
+        NodoAST nodoArgs2 = new NodoAST(TipoNodo.args, "ARGS", es2left, es2right, parser.sourceFile); 
+        nodoArgs2.hijos.addAll(es2);
+        RESULT = new NodoAST(TipoNodo.llamadaFuncion, f2, f2left, f2right, parser.sourceFile, nodoLlamada1, nodoArgs2);                  
+    :}
 ;
 
 IF ::= si:s parenA EXP:e parenC BLOQUE:b1 {:
@@ -274,6 +289,7 @@ MONO_OPERADOR ::= inc:o {:
         RESULT = new NodoAST(TipoNodo.dec, String.valueOf(o), oleft, oright, parser.sourceFile);    
     :}
 ;
+
 EXP ::= EXP:e1 mas:op EXP:e2{:
         RESULT = new NodoAST(TipoNodo.mas, String.valueOf(op), opleft, opright, parser.sourceFile, (NodoAST)e1, (NodoAST)e2);
     :}
@@ -375,6 +391,9 @@ EXP ::= EXP:e1 mas:op EXP:e2{:
     | id:i1 punto id:i2{:
         NodoAST nodoID2 = new NodoAST(TipoNodo.identificador, i2, i2left, i2right, parser.sourceFile );     
         RESULT = new NodoAST(TipoNodo.identificador, i1, i1left, i1right, parser.sourceFile, nodoID2);             
+    :}    
+    | FUNCION_ANONIMA:f{:
+        RESULT = f;      
     :}
 ;
 

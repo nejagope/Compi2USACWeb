@@ -3,8 +3,8 @@ import java_cup.runtime.Symbol;
 import java.util.ArrayList;
 %%
 
-%cupsym TokensCHTML
-%class ScannerCHTML
+%cupsym TokensCCSS
+%class ScannerCCSS
 %cup
 %public
 %unicode
@@ -17,7 +17,7 @@ import java.util.ArrayList;
     ArrayList <ErrorCode> errores;
     String sourceFile;
 
-    public ScannerCHTML(java.io.InputStream is, String archivoFuente, ArrayList <ErrorCode> errores){
+    public ScannerCCSS(java.io.InputStream is, String archivoFuente, ArrayList <ErrorCode> errores){
         this(new java.io.InputStreamReader(is));      
         this.sourceFile = archivoFuente;
         this.errores = errores;
@@ -30,11 +30,11 @@ import java.util.ArrayList;
     StringBuffer string = new StringBuffer();
 
     private Symbol simbolo(int type) {
-        System.out.println(TokensCHTML.terminalNames[type] + " - " + (yyline+1)+ " - " + (yycolumn+1));
+        System.out.println(TokensCCSS.terminalNames[type] + " - " + (yyline+1)+ " - " + (yycolumn+1));
         return new Symbol(type, yyline, yycolumn);
     }
     private Symbol simbolo(int type, Object value) {
-        System.out.println(TokensCHTML.terminalNames[type] + " - " + (yyline+1)+ " - " + (yycolumn+1) + " - " + value);
+        System.out.println(TokensCCSS.terminalNames[type] + " - " + (yyline+1)+ " - " + (yycolumn+1) + " - " + value);
         return new Symbol(type, yyline, yycolumn, value);
     }
 
@@ -42,14 +42,19 @@ import java.util.ArrayList;
         System.out.println("Error léxico - " + (yyline+1) + " - " + (yycolumn+1) + " - " + cadena);
         errores.add(new ErrorCode(TipoError.lexico, yyline + 1, yycolumn +1, cadena, mensaje, this.sourceFile));
         //System.err.println(mensaje + ": \""+ cadena + "\" (" + (yyline + 1) + "," + (yycolumn +1) + ")");
-        return new Symbol(TokensCHTML.errorLex, yyline, yycolumn, cadena);
+        return new Symbol(TokensCCSS.errorLex, yyline, yycolumn, cadena);
     }
 %}
 
 finLinea = \r|\n|\r\n
-blank = [ \t\f]
+blank = [ \t\f]|{finLinea}
 
-%state STRING, COMENTARIO, COMENTARIO_MULTILINEA, ETIQUETA, VALOR_ELEMENTO
+entero = [0-9]+
+doble = {entero} "." {entero}
+letra = [a-zA-Z]
+id = {letra} ({letra} | "_" | {entero})*
+
+%state STRING, STRING_APOSTROFO, COMENTARIO, COMENTARIO_MULTILINEA
 
 %%
 
@@ -58,128 +63,140 @@ blank = [ \t\f]
     "//"          { yybegin(COMENTARIO); }    
     "/*"          { yybegin(COMENTARIO_MULTILINEA); }    
 
-    "<" {blank}* "fin-salto" {blank}* ">"       {                         
-                        return simbolo(TokensCHTML.salto, "fin-salto");
-                    }
-
-    /*inicio de una etiqueta CSHTML */
-    "<"             { 
-                        yybegin(ETIQUETA); 
-                        return simbolo(TokensCHTML.LT, yytext());
-                    }
+    /*inicio de un string, borra el buffer para poder crear la cadena nueva*/
+    \"             { string.setLength(0); yybegin(STRING); }    
     
-    {blank}+         {}
+    /*inicio de un nombre de fuente, borra el buffer para poder crear la cadena nueva*/
+    "'"          { string.setLength(0); yybegin(STRING_APOSTROFO); }    
 
-    [^<]({blank}|[^<])*          {return simbolo(TokensCHTML.textoPlano, yytext().trim().replaceAll("\t", "").replaceAll("  ",""));}
+    /* PALABRAS RESERVADAS */    
+    ":="          { return simbolo(TokensCCSS.asignacion, yytext());}
+    ";"          { return simbolo(TokensCCSS.ptoComa, yytext());}
+    ","          { return simbolo(TokensCCSS.coma, yytext());}
+        
+    "*"             { return simbolo(TokensCCSS.por, yytext());}
+    "+"             { return simbolo(TokensCCSS.mas, yytext());}
+    "-"             { return simbolo(TokensCCSS.menos, yytext());}
+    "/"             { return simbolo(TokensCCSS.entre, yytext());}  
+    "["             { return simbolo(TokensCCSS.corcheteA, yytext());}
+    "]"             { return simbolo(TokensCCSS.corcheteC, yytext());}
+    "("             { return simbolo(TokensCCSS.parenA, yytext());}
+    ")"             { return simbolo(TokensCCSS.parenC, yytext());}
     
-    .              {return errorLexico(yytext(), "Caracter no reconocido");}    
+    "alineado"             { return simbolo(TokensCCSS.alineado, yytext());}    
+    "izquierda"             { return simbolo(TokensCCSS.izquierda, yytext());}    
+    "derecha"             { return simbolo(TokensCCSS.derecha, yytext());}    
+    "centrado"             { return simbolo(TokensCCSS.centrado, yytext());}    
+    "justificado"             { return simbolo(TokensCCSS.justificado, yytext());}    
 
+    "texto"             { return simbolo(TokensCCSS.alineado, yytext());}    
+    
+    "formato"             { return simbolo(TokensCCSS.formato, yytext());}    
+    "negrilla"             { return simbolo(TokensCCSS.negrilla, yytext());}    
+    "cursiva"             { return simbolo(TokensCCSS.cursiva, yytext());}    
+    "mayuscula"             { return simbolo(TokensCCSS.mayuscula, yytext());}    
+    "minuscula"             { return simbolo(TokensCCSS.minuscula, yytext());}    
+    "capital-t"             { return simbolo(TokensCCSS.capital, yytext());}    
+
+    "letra"             { return simbolo(TokensCCSS.fuente, yytext());}    
+    "tamtex"             { return simbolo(TokensCCSS.tamTex, yytext());}    
+    "fondoElemento"             { return simbolo(TokensCCSS.fondoElemento, yytext());}    
+    
+    "autoredimension"             { return simbolo(TokensCCSS.autoredimension, yytext());}    
+    "horizontal"             { return simbolo(TokensCCSS.horizontal, yytext());}    
+    "vertical"             { return simbolo(TokensCCSS.vertical, yytext());}    
+    "area"             { return simbolo(TokensCCSS.area, yytext());}    
+    
+    "visible"             { return simbolo(TokensCCSS.visible   , yytext());}    
+    "borde"             { return simbolo(TokensCCSS.borde, yytext());}    
+    "opaque"          { return simbolo(TokensCCSS.opaque, yytext());}
+    "colortext"          { return simbolo(TokensCCSS.colorTex, yytext());}
+    
+    "grupo"          { return simbolo(TokensCCSS.grupo, yytext());}
+    "id"          { return simbolo(TokensCCSS.id, yytext());}
+
+    /* valore literales */
+    "true"           { return simbolo(TokensCCSS.booleanoLiteral, true);}
+    "false"           { return simbolo(TokensCCSS.booleanoLiteral, false);}
+    {id}           { return simbolo(TokensCCSS.identificador, yytext());}
+    {entero}       { return simbolo(TokensCCSS.enteroLiteral, Integer.parseInt( yytext() ) );}
+    {doble}        { return simbolo(TokensCCSS.dobleLiteral, Double.parseDouble( yytext() ) );}
+       
+    {blank}+        { /* ignorar */ }
+    .              {return errorLexico(yytext(), "Caracter no reconocido");}   
     <<EOF>>         {
                         return simbolo(TokensCHTML.EOF);
                     }
 }
 
-<ETIQUETA> {
-    /* SALIDA DEL ESTADO ETIQUETA */
-    ">" { 
-            yybegin(YYINITIAL);                         
-            return simbolo(TokensCHTML.GT, yytext());
-        }
+<STRING> {
+    \"  { yybegin(YYINITIAL); 
+            /*System.out.println("Cadena: " + string.toString());*/
+            return simbolo(TokensCCSS.cadenaLiteral, string.toString()); }
 
-    /* PALABRAS RESERVADAS DENTRO DE ETIQUETAS*/
-    /* ETIQUETAS */
-    "chtml"                 { return simbolo(TokensCHTML.chtml, yytext());}
-    "fin-chtml"             { return simbolo(TokensCHTML.chtmlF, yytext());}
-    "encabezado"                 { return simbolo(TokensCHTML.encabezado, yytext());}
-    "fin-encabezado"                 { return simbolo(TokensCHTML.encabezadoF, yytext());}    
-    "cjs"                 { return simbolo(TokensCHTML.cjs, yytext());}
-    "fin-cjs"                 { return simbolo(TokensCHTML.cjsF, yytext());}
-    "cuerpo"                 { return simbolo(TokensCHTML.cuerpo, yytext());}
-    "fin-cuerpo"                 { return simbolo(TokensCHTML.cuerpoF, yytext());}
-    "ccss"                 { return simbolo(TokensCHTML.ccss, yytext());}
-    "fin-ccss"                 { return simbolo(TokensCHTML.ccssF, yytext());}
-    "titulo"                 { return simbolo(TokensCHTML.titulo, yytext());}
-    "fin-titulo"                 { return simbolo(TokensCHTML.tituloF, yytext());}
-    "panel"                 { return simbolo(TokensCHTML.panel, yytext());}
-    "fin-panel"                 { return simbolo(TokensCHTML.panelF, yytext());}
-    "texto"                 { return simbolo(TokensCHTML.texto, yytext());}
-    "fin-texto"                 { return simbolo(TokensCHTML.textoF, yytext());}
-    "imagen"                 { return simbolo(TokensCHTML.imagen, yytext());}
-    "fin-imagen"                 { return simbolo(TokensCHTML.imagenF, yytext());}
-    "boton"                 { return simbolo(TokensCHTML.boton, yytext());}
-    "fin-boton"                 { return simbolo(TokensCHTML.botonF, yytext());}
-    "enlace"                 { return simbolo(TokensCHTML.enlace, yytext());}
-    "fin-enlace"                 { return simbolo(TokensCHTML.enlaceF, yytext());}
-    "tabla"                 { return simbolo(TokensCHTML.tabla, yytext());}
-    "fin-tabla"                 { return simbolo(TokensCHTML.tablaF, yytext());}
-    "fil_t"                 { return simbolo(TokensCHTML.fila, yytext());}
-    "fin-fil_t"                 { return simbolo(TokensCHTML.filaF, yytext());}
-    "cb"                 { return simbolo(TokensCHTML.celdaEnc, yytext());}
-    "fin-cb"                 { return simbolo(TokensCHTML.celdaEncF, yytext());}
-    "ct"                 { return simbolo(TokensCHTML.celda, yytext());}
-    "fin-ct"                 { return simbolo(TokensCHTML.celdaF, yytext());}
-    "texto_a"                 { return simbolo(TokensCHTML.areaTexto, yytext());}
-    "fin-texto_a"                 { return simbolo(TokensCHTML.areaTextoF, yytext());}
-    "caja_texto"                 { return simbolo(TokensCHTML.cajaTexto, yytext());}
-    "fin-caja_texto"                 { return simbolo(TokensCHTML.cajaTextoF, yytext());}
-    "caja"                 { return simbolo(TokensCHTML.cajaOpciones, yytext());}
-    "fin-caja"                 { return simbolo(TokensCHTML.cajaOpcionesF, yytext());}
-    "opcion"                 { return simbolo(TokensCHTML.opcion, yytext());}
-    "fin-opcion"                 { return simbolo(TokensCHTML.opcionF, yytext());}
-    "spinner"                 { return simbolo(TokensCHTML.spinner, yytext());}
-    "fin-spinner"                 { return simbolo(TokensCHTML.spinnerF, yytext());}    
-    //"fin-salto"                 { return simbolo(TokensCHTML.salto, yytext());}
-    /* ELEMENTOS */
+    [^"\08""\09""\10""\34""\39""\92"\"\b\n\r\t\\]+    { string.append( yytext() ); }
+    \\b             { string.append('\b'); }
+    \\t             { string.append('\t'); }
+    \\n             { string.append('\n'); }
+    \\r             { string.append('\r'); }
+    \\\"            { string.append('\"'); }
+    \\\\            { string.append('\\'); }
+    \\'             { string.append('\''); }
+    \\08            { string.append('\b'); }
+    \\09            { string.append('\t'); }
+    \\10            { string.append('\n'); }
+    \\34            { string.append('\"'); }    
+    \\39            { string.append('\''); }
+    \\92            { string.append('\\'); }
     
-    "ruta"                 { return simbolo(TokensCHTML.ruta, yytext());}
-    "fondo"                 { return simbolo(TokensCHTML.fondo, yytext());}
-    "click"                 { return simbolo(TokensCHTML.click, yytext());}
-    "id"                 { return simbolo(TokensCHTML.id, yytext());}
-    "grupo"                 { return simbolo(TokensCHTML.grupo, yytext());}
-    "alto"                 { return simbolo(TokensCHTML.alto, yytext());}
-    "ancho"                 { return simbolo(TokensCHTML.ancho, yytext());}
-    "alineado"                 { return simbolo(TokensCHTML.alineado, yytext());}    
-    "valor"                 { return simbolo(TokensCHTML.valor, yytext());} 
-    
-    [a-zA-Z0-9][0-9a-zA-Z_-]*          {return simbolo(TokensCHTML.elementoDesconocido, yytext());}
-    
-    /* VALORES DE ELEMENTOS */
-    /*inicio de un string, borra el buffer para poder crear la cadena nueva*/
-    
-    \"             { string.setLength(0); yybegin(VALOR_ELEMENTO); }
-
-    ";"                 { return simbolo(TokensCHTML.ptoComa, yytext());}
-    "="                 { return simbolo(TokensCHTML.EQ, yytext());}
-
-    {blank}+         {}
-
-    /*inicio de una etiqueta CSHTML */
-    "<"             { 
-                        yybegin(ETIQUETA); 
-                        return simbolo(TokensCHTML.LT, yytext());
+    \\.             { /*throw new RuntimeException("Illegal escape sequence \""+yytext()+"\""); */  
+                        yybegin(YYINITIAL);
+                        return errorLexico(yytext(), "Secuencia de escape no valida");
                     }
-    
-    
-    .              {return errorLexico(yytext(), "Caracter no reconocido");}
-    <<EOF>>         {
-                        return simbolo(TokensCHTML.EOF);                      
+    {finLinea}      { /*throw new RuntimeException("Cadena de caracteres no terminada en la linea"); */ 
+                        yybegin(YYINITIAL);
+                        return errorLexico(" ", "Cadena no terminada antes del fin de línea");
                     }
-
-}
-
-<VALOR_ELEMENTO> {
-    \"  { 
-            yybegin(ETIQUETA);             
-            return simbolo(TokensCHTML.cadenaValor, string.toString()); 
-        }
-        
-    [^\"]+    { string.append( yytext() ); }
-
     <<EOF>>         {
                         yybegin(YYINITIAL);
-                        return errorLexico(string.toString(), "Cadena no terminada, faltan comillas de cierre");
+                        return errorLexico(" ", "Cadena no terminada antes del fin de línea");
                     }
 }
+
+<STRING_APOSTROFO> {
+    \'  { yybegin(YYINITIAL); 
+            /*System.out.println("Cadena: " + string.toString());*/
+            return simbolo(TokensCCSS.cadenaLiteral2, string.toString()); }
+
+    [^"\08""\09""\10""\34""\39""\92"\"\b\n\r\t\\]+    { string.append( yytext() ); }
+    \\b             { string.append('\b'); }
+    \\t             { string.append('\t'); }
+    \\n             { string.append('\n'); }
+    \\r             { string.append('\r'); }
+    \\\"            { string.append('\"'); }
+    \\\\            { string.append('\\'); }
+    \\'             { string.append('\''); }
+    \\08            { string.append('\b'); }
+    \\09            { string.append('\t'); }
+    \\10            { string.append('\n'); }
+    \\34            { string.append('\"'); }    
+    \\39            { string.append('\''); }
+    \\92            { string.append('\\'); }
+    
+    \\.             { /*throw new RuntimeException("Illegal escape sequence \""+yytext()+"\""); */  
+                        yybegin(YYINITIAL);
+                        return errorLexico(yytext(), "Secuencia de escape no valida");
+                    }
+    {finLinea}      { /*throw new RuntimeException("Cadena de caracteres no terminada en la linea"); */ 
+                        yybegin(YYINITIAL);
+                        return errorLexico(" ", "Cadena no terminada antes del fin de línea");
+                    }
+    <<EOF>>         {
+                        yybegin(YYINITIAL);
+                        return errorLexico(" ", "Cadena no terminada antes del fin de línea");
+                    }
+}
+
 
 <COMENTARIO> {
     {finLinea}  { yybegin(YYINITIAL);}             

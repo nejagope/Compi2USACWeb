@@ -12,7 +12,7 @@ parser code
     public String sourceFile;
 
 
-    public ParserCHTML(java_cup.runtime.Scanner s, String archivoFuente,  ArrayList <ErrorCode> errores){
+    public ParserCCSS(java_cup.runtime.Scanner s, String archivoFuente,  ArrayList <ErrorCode> errores){
         super(s);
         this.sourceFile = archivoFuente;
         this.errores = errores;
@@ -56,165 +56,174 @@ action code
 
 :}
 
-terminal LT, GT, EQ, ptoComa;
-terminal chtml, encabezado, cjs, ccss, cuerpo, titulo, panel, texto, imagen, boton, enlace, tabla;
-terminal fila, celdaEnc, celda, areaTexto, cajaTexto, cajaOpciones, opcion, spinner, salto;
-terminal chtmlF, encabezadoF, cjsF, ccssF, cuerpoF, tituloF, panelF, textoF, imagenF, botonF, enlaceF, tablaF;
-terminal filaF, celdaEncF, celdaF, areaTextoF, cajaTextoF, cajaOpcionesF, opcionF, spinnerF;
+terminal String asignacion, coma, ptoComa, por, entre, mas, menos, parenA, parenC, corcheteA, corcheteC;
+terminal String alineado, centrado, justificado, izquierda, derecha;
+terminal String texto, formato, negrilla, cursiva, mayuscula, minuscula, capital, fuente, tamTex, fondoElemento;
+terminal String autoredimension, area, horizontal, vertical;
+terminal String borde, visible, opaque, colorTex, grupo, id;
+terminal booleanoLiteral, dobleLiteral, enteroLiteral, cadenaLiteral, cadenaLiteral2, identificador, errorLex;
 
-terminal String ruta, fondo, click, id, grupo, alto, ancho, alineado, valor;
-
-terminal cadenaValor;
-
-terminal String elementoDesconocido, textoPlano;
-terminal errorLex;
+terminal SIGNO;
 
 non terminal S;
-non terminal NodoAST CHTML, ATRIB, NODO_CHTML, ATRIBS, TAG_INI, TAG_FIN, TAG_NAME, TAG_FIN_NAME; 
-non terminal ArrayList<NodoAST> NODOS_CHTML;
+non terminal NodoAST DEFINICION, REGLA, ESTILO, CONJUNTO, NOMBRE_ESTILO, VALOR, EXP; 
+non terminal ArrayList<NodoAST> DEFINICIONES, REGLAS, ESTILOS, VALORES, SET_VALORES;
 
-non terminal String ELEMENTO_NAME;
+precedence left mas, menos;
+precedence left por, entre;
+precedence left SIGNO;
+
 
 start with S;
 
 //**********************************************************************************************************
-S ::= NODO_CHTML:n{:
-    parser.ast = new AST();
-    parser.ast.raiz = n;
-:};
-
-NODOS_CHTML ::= NODOS_CHTML:es NODO_CHTML:e{:
-        ArrayList<NodoAST> nodos = es;
-        nodos.add(e);
-        RESULT = nodos;
-    :}
-    | NODO_CHTML:e{:
-        ArrayList<NodoAST> nodos = new ArrayList<NodoAST>();
-        nodos.add(e);
-        RESULT = nodos;
+S ::= DEFINICIONES:defs{:
+        parser.ast = new AST();
+        NodoAST nodo = new NodoAST(TipoNodo.definicionesCCSS, "DEFS_CCSS", defsleft, defsright, parser.sourceFile);
+        nodo.hijos.addAll(defs);
+        parser.ast.raiz = nodo;
     :}
 ;
 
-NODO_CHTML ::= TAG_INI:ta NODOS_CHTML:ns TAG_FIN:tc {:
-        ta.hijos.addAll(ns);
-        RESULT = ta;
-        if (ta.tipo != tc.tipo)
-            agregarError(tc.lexema, tcleft+1, tcright+1, "Las etiquetas no coinciden. Se esperaba el cierre de" + ta.lexema);
+DEFINICIONES ::= DEFINICIONES:defs DEFINICION:def {:
+        defs.add(def);
+        RESULT = defs;
     :}
-    | TAG_INI:ta TAG_FIN:tc {:
-        RESULT = ta;
+    | DEFINICION:def{:
+        ArrayList<NodoAST> defs = new ArrayList();
+        defs.add(def);
+        RESULT = defs;
+    :}
+;
+
+DEFINICION ::= identificador:i corcheteA REGLAS:r corcheteC {:
+        NodoAST nodoDefinicion = new NodoAST(TipoNodo.definicion, i, ileft, iright, parser.sourceFile);
+        nodoDefinicion.hijos.addAll(r);
+        RESULT = nodoDefinicion;
+    :}
+;
+
+REGLAS ::= REGLAS:lista REGLA:r{:
+        lista.add(r);
+        RESULT = lista;
+    :}
+    | REGLA:r{:
+        ArrayList<NodoAST> reglas = new ArrayList();
+        reglas.add(r);
+        RESULT = reglas;
+    :}
+;
+
+REGLA ::= CONJUNTO:c ESTILOS:e {:
+        NodoAST nodoRegla = new NodoAST(TipoNodo.regla, "REGLA", cleft, cright, parser.sourceFile, c);
+        nodoRegla.hijos.addAll(e);
+        RESULT = nodoRegla;
+    :}
+;
+
+ESTILOS ::= ESTILOS:lista ESTILO:e{:
+        lista.add(e);
+        RESULT = lista;
+    :}
+    | ESTILO:e{:
+        ArrayList<NodoAST> estilos = new ArrayList();
+        estilos.add(e);
+        RESULT = estilos;
+    :}
+;
+
+CONJUNTO ::= grupo:g parenA identificador:i parenC ptoComa{:
+        NodoAST nodoGrupo = new NodoAST(TipoNodo.grupo, g, gleft, gright, parser.sourceFile);
+        NodoAST nodoID2 = new NodoAST(TipoNodo.identificador, i, ileft, iright, parser.sourceFile);
+        RESULT = new NodoAST(TipoNodo.conjunto, "CONJUNTO", gleft, gright, parser.sourceFile, nodoGrupo, nodoID2); 
+    :}
+    | id:iden parenA identificador:i parenC ptoComa{:
+        NodoAST nodoID = new NodoAST(TipoNodo.id, iden, idenleft, idenright, parser.sourceFile);
+        NodoAST nodoID2 = new NodoAST(TipoNodo.identificador, i, ileft, iright, parser.sourceFile);
+        RESULT = new NodoAST(TipoNodo.conjunto, "CONJUNTO", idenleft, idenright, parser.sourceFile, nodoID, nodoID2); 
+    :}
+;
+
+ESTILO ::=  NOMBRE_ESTILO:e asignacion VALORES:vs ptoComa {:
+        e.hijos.addAll(vs); 
+        RESULT = e;
+    :}
+    | NOMBRE_ESTILO:e asignacion corcheteA VALORES:vs corcheteC ptoComa {:
+        e.hijos.addAll(vs); 
+        RESULT = e;
+    :}
+;
+
+NOMBRE_ESTILO ::= alineado:e {:RESULT = new NodoAST(TipoNodo.alineado, e, eleft, eright, parser.sourceFile); :}
+    | texto:e {:RESULT = new NodoAST(TipoNodo.texto, e, eleft, eright, parser.sourceFile); :}
+    | autoredimension:e {:RESULT = new NodoAST(TipoNodo.autoredimension, e, eleft, eright, parser.sourceFile); :}
+    | borde:e {:RESULT = new NodoAST(TipoNodo.borde, e, eleft, eright, parser.sourceFile); :}
+    | formato:e {:RESULT = new NodoAST(TipoNodo.formato, e, eleft, eright, parser.sourceFile); :}
+    | fuente:e {:RESULT = new NodoAST(TipoNodo.fuente, e, eleft, eright, parser.sourceFile); :}
+    | tamTex:e {:RESULT = new NodoAST(TipoNodo.tamTex, e, eleft, eright, parser.sourceFile); :}
+    | fondoElemento:e {:RESULT = new NodoAST(TipoNodo.fondoElemento, e, eleft, eright, parser.sourceFile); :}
+    | visible:e {:RESULT = new NodoAST(TipoNodo.visible, e, eleft, eright, parser.sourceFile); :}
+    | opaque:e {:RESULT = new NodoAST(TipoNodo.opaque, e, eleft, eright, parser.sourceFile); :}
+    | colorTex:e {:RESULT = new NodoAST(TipoNodo.colorTex, e, eleft, eright, parser.sourceFile); :}
+;
+
+VALORES ::= VALORES:vs coma VALOR:v{:
+        vs.add(v);
+        RESULT = vs;
+    :}
+    | VALOR:v {:
+        ArrayList<NodoAST> valores = new ArrayList();
+        valores.add(v);
+        RESULT = valores;
+    :}
+;
+
+VALOR ::= centrado:v {:RESULT = new NodoAST(TipoNodo.centrado, v, vleft, vright, parser.sourceFile); :}
+    | justificado:v {:RESULT = new NodoAST(TipoNodo.justificado, v, vleft, vright, parser.sourceFile); :}
+    | izquierda:v {:RESULT = new NodoAST(TipoNodo.izquierda, v, vleft, vright, parser.sourceFile); :}
+    | derecha:v {:RESULT = new NodoAST(TipoNodo.derecha, v, vleft, vright, parser.sourceFile); :}
+    | negrilla:v {:RESULT = new NodoAST(TipoNodo.negrilla, v, vleft, vright, parser.sourceFile); :}
+    | cursiva:v {:RESULT = new NodoAST(TipoNodo.cursiva, v, vleft, vright, parser.sourceFile); :}
+    | minuscula:v {:RESULT = new NodoAST(TipoNodo.minuscula, v, vleft, vright, parser.sourceFile); :}
+    | mayuscula:v {:RESULT = new NodoAST(TipoNodo.mayuscula, v, vleft, vright, parser.sourceFile); :}
+    | capital:v {:RESULT = new NodoAST(TipoNodo.capital, v, vleft, vright, parser.sourceFile); :}
+    | area:v {:RESULT = new NodoAST(TipoNodo.area, v, vleft, vright, parser.sourceFile); :}
+    | horizontal:v {:RESULT = new NodoAST(TipoNodo.horizontal, v, vleft, vright, parser.sourceFile); :}
+    | vertical:v {:RESULT = new NodoAST(TipoNodo.vertical, v, vleft, vright, parser.sourceFile); :}
+    | EXP:v {: RESULT = v; :}
+ ; 
+
+EXP ::= EXP:e1 mas:op EXP:e2{:
+        RESULT = new NodoAST(TipoNodo.mas, String.valueOf(op), opleft, opright, parser.sourceFile, (NodoAST)e1, (NodoAST)e2);
+    :}
+    | EXP:e1 menos:op EXP:e2{:
+        RESULT = new NodoAST(TipoNodo.menos, String.valueOf(op), opleft, opright, parser.sourceFile, (NodoAST)e1, (NodoAST)e2);
+    :}
+    | EXP:e1 por:op EXP:e2{:
+        RESULT = new NodoAST(TipoNodo.por, String.valueOf(op), opleft, opright, parser.sourceFile, (NodoAST)e1, (NodoAST)e2);
+    :}
+    | EXP:e1 entre:op EXP:e2{:
+        RESULT = new NodoAST(TipoNodo.entre, String.valueOf(op), opleft, opright, parser.sourceFile, (NodoAST)e1, (NodoAST)e2);
     :}    
-    | textoPlano:t {: 
-        RESULT = new NodoAST(TipoNodo.textoPlano, t, tleft, tright, parser.sourceFile); 
+    | menos:op EXP:e{:
+        RESULT = new NodoAST(TipoNodo.negativo, String.valueOf(op), opleft, opright, parser.sourceFile, (NodoAST)e);
+    :} %prec SIGNO    
+    | parenA EXP:e parenC{:
+        RESULT = e;
     :}
-    | salto:n  {: 
-        RESULT = new NodoAST(TipoNodo.salto, n, nleft, nright, parser.sourceFile); 
+    | enteroLiteral:e{:
+        RESULT = new NodoAST(TipoNodo.enteroLit, e, eleft, eright, parser.sourceFile);         
+    :}
+    | dobleLiteral:d{:
+        RESULT = new NodoAST(TipoNodo.dobleLit, d, dleft, dright, parser.sourceFile);         
+    :}
+    | booleanoLiteral:b{:
+        RESULT = new NodoAST(TipoNodo.booleanoLit, b, bleft, bright, parser.sourceFile);         
+    :}
+    | cadenaLiteral:c{:
+        RESULT = new NodoAST(TipoNodo.cadenaLit, c, cleft, cright, parser.sourceFile);       
     :}    
-;
-
-TAG_INI ::= LT TAG_NAME:tn ATRIBS:atribs GT {:        
-        tn.agregarHijo(atribs);
-        RESULT = tn;
-    :}
-    | LT TAG_NAME:tn GT {:
-        RESULT = tn;
-    :}
-    | error GT:e {:        
-        RESULT = new NodoAST(TipoNodo.errorSintactico, "Error antes de <", eleft, eright, parser.sourceFile);
-    :}    
-;
-
-
-TAG_FIN ::= LT TAG_FIN_NAME:tn GT {:
-        RESULT = tn;
-    :}
-    | LT:e TAG_FIN_NAME:tn {:
-        RESULT = tn;
-        agregarError("", eleft+1, eright+1, "Se esperaba >");
-    :}
-    | TAG_FIN_NAME:tn GT{:
-        RESULT = tn;
-        agregarError("", tnleft+1, tnright+1, "Se esperaba >");
-    :}
-;
-
-ATRIBS ::= ATRIBS:atribs ATRIB:atrib {:
-        NodoAST nodoAtribs = atribs;
-        nodoAtribs.agregarHijo(atrib);
-        RESULT = nodoAtribs;
-    :}
-    | ATRIB:atrib {:
-        RESULT = new NodoAST(TipoNodo.atribs, "ATRIBS", atribleft, atribright, parser.sourceFile, atrib);
-    :}
-;
-
-ATRIB ::= ELEMENTO_NAME:e EQ cadenaValor:c ptoComa {:        
-        NodoAST nodoValor = new NodoAST(TipoNodo.cadenaValor, c, cleft, cright, parser.sourceFile);
-        RESULT = new NodoAST(TipoNodo.elemento, e, eleft, eright, parser.sourceFile, nodoValor);        
-    :}
-    | error ptoComa:p {:        
-        RESULT = new NodoAST(TipoNodo.errorSintactico, "Error antes de ;", pleft, pright, parser.sourceFile);
-    :}
-;
-
-TAG_NAME ::= 
-      chtml:n  {: RESULT = new NodoAST(TipoNodo.chtml, n, nleft, nright, parser.sourceFile); :}
-    | encabezado:n  {: RESULT = new NodoAST(TipoNodo.encabezado, n, nleft, nright, parser.sourceFile); :}    
-    | cjs:n  {: RESULT = new NodoAST(TipoNodo.cjs, n, nleft, nright, parser.sourceFile); :}
-    | ccss:n {: RESULT = new NodoAST(TipoNodo.ccss, n, nleft, nright, parser.sourceFile); :}
-    | cuerpo:n  {: RESULT = new NodoAST(TipoNodo.cuerpo, n, nleft, nright, parser.sourceFile); :}
-    | titulo:n  {: RESULT = new NodoAST(TipoNodo.titulo, n, nleft, nright, parser.sourceFile); :}
-    | panel:n  {: RESULT = new NodoAST(TipoNodo.panel, n, nleft, nright, parser.sourceFile); :}
-    | texto:n  {: RESULT = new NodoAST(TipoNodo.texto, n, nleft, nright, parser.sourceFile); :}
-    | imagen:n  {: RESULT = new NodoAST(TipoNodo.imagen, n, nleft, nright, parser.sourceFile); :}
-    | boton:n  {: RESULT = new NodoAST(TipoNodo.boton, n, nleft, nright, parser.sourceFile); :}
-    | enlace:n  {: RESULT = new NodoAST(TipoNodo.enlace, n, nleft, nright, parser.sourceFile); :}
-    | tabla:n  {: RESULT = new NodoAST(TipoNodo.tabla, n, nleft, nright, parser.sourceFile); :}
-    | fila:n  {: RESULT = new NodoAST(TipoNodo.fila, n, nleft, nright, parser.sourceFile); :}
-    | celdaEnc:n  {: RESULT = new NodoAST(TipoNodo.celdaEnc, n, nleft, nright, parser.sourceFile); :}
-    | celda:n  {: RESULT = new NodoAST(TipoNodo.celda, n, nleft, nright, parser.sourceFile); :}
-    | areaTexto:n  {: RESULT = new NodoAST(TipoNodo.areaTexto, n, nleft, nright, parser.sourceFile); :}
-    | cajaTexto:n  {: RESULT = new NodoAST(TipoNodo.cajaTexto, n, nleft, nright, parser.sourceFile); :}
-    | cajaOpciones:n  {: RESULT = new NodoAST(TipoNodo.cajaOpciones, n, nleft, nright, parser.sourceFile); :}
-    | opcion:n  {: RESULT = new NodoAST(TipoNodo.opcion, n, nleft, nright, parser.sourceFile); :}
-    | spinner:n  {: RESULT = new NodoAST(TipoNodo.spinner, n, nleft, nright, parser.sourceFile); :}
-;
-
-TAG_FIN_NAME ::=
-      chtmlF:n  {: RESULT = new NodoAST(TipoNodo.chtmlF, n, nleft, nright, parser.sourceFile); :}
-    | encabezadoF:n  {: RESULT = new NodoAST(TipoNodo.encabezadoF, n, nleft, nright, parser.sourceFile); :}
-    | cjsF:n  {: RESULT = new NodoAST(TipoNodo.cjsF, n, nleft, nright, parser.sourceFile); :}
-    | ccssF:n {: RESULT = new NodoAST(TipoNodo.ccssF, n, nleft, nright, parser.sourceFile); :}
-    | cuerpoF:n  {: RESULT = new NodoAST(TipoNodo.cuerpoF, n, nleft, nright, parser.sourceFile); :}
-    | tituloF:n  {: RESULT = new NodoAST(TipoNodo.tituloF, n, nleft, nright, parser.sourceFile); :}
-    | panelF:n  {: RESULT = new NodoAST(TipoNodo.panelF, n, nleft, nright, parser.sourceFile); :}
-    | textoF:n  {: RESULT = new NodoAST(TipoNodo.textoF, n, nleft, nright, parser.sourceFile); :}
-    | imagenF:n  {: RESULT = new NodoAST(TipoNodo.imagenF, n, nleft, nright, parser.sourceFile); :}
-    | botonF:n  {: RESULT = new NodoAST(TipoNodo.botonF, n, nleft, nright, parser.sourceFile); :}
-    | enlaceF:n  {: RESULT = new NodoAST(TipoNodo.enlaceF, n, nleft, nright, parser.sourceFile); :}
-    | tablaF:n  {: RESULT = new NodoAST(TipoNodo.tablaF, n, nleft, nright, parser.sourceFile); :}
-    | filaF:n  {: RESULT = new NodoAST(TipoNodo.filaF, n, nleft, nright, parser.sourceFile); :}
-    | celdaEncF:n  {: RESULT = new NodoAST(TipoNodo.celdaEncF, n, nleft, nright, parser.sourceFile); :}
-    | celdaF:n  {: RESULT = new NodoAST(TipoNodo.celdaF, n, nleft, nright, parser.sourceFile); :}
-    | areaTextoF:n  {: RESULT = new NodoAST(TipoNodo.areaTextoF, n, nleft, nright, parser.sourceFile); :}
-    | cajaTextoF:n  {: RESULT = new NodoAST(TipoNodo.cajaTextoF, n, nleft, nright, parser.sourceFile); :}
-    | cajaOpcionesF:n  {: RESULT = new NodoAST(TipoNodo.cajaOpcionesF, n, nleft, nright, parser.sourceFile); :}
-    | opcionF:n  {: RESULT = new NodoAST(TipoNodo.opcionF, n, nleft, nright, parser.sourceFile); :}
-    | spinnerF:n  {: RESULT = new NodoAST(TipoNodo.spinnerF, n, nleft, nright, parser.sourceFile); :}    
-;
-
-ELEMENTO_NAME ::=
-      ruta:n {: RESULT = n; :}
-    | fondo:n {: RESULT = n; :}
-    | click:n {: RESULT = n; :}
-    | id:n {: RESULT = n; :}
-    | grupo:n {: RESULT = n; :}    
-    | alto:n {: RESULT = n; :}
-    | ancho:n {: RESULT = n; :}        
-    | alineado:n {: RESULT = n; :}
-    | valor:n {: RESULT = n; :}
-    | elementoDesconocido:n {: 
-        RESULT = n;         
-        agregarError(n, nleft+1, nright+1, "Nombre de elemento desconocido");    
+    | cadenaLiteral2:v {:
+        RESULT = new NodoAST(TipoNodo.cadenaLit2, v, vleft, vright, parser.sourceFile); 
     :}
 ;

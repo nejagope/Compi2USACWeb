@@ -9,5 +9,5 @@ package compilacion;
  * @author Nelson Jair
  */
 public enum TipoError {
-    lexico, sintactico, semantico, archivoNoEncontrado
+    lexico, sintactico, semantico, archivoNoEncontrado, extensionNoPermida, archivoNoPuedeLeerse, otro
 }

@@ -27,7 +27,7 @@ public class AnalisisSintactico {
 
     public AnalisisSintactico(String nombreArchivoFuente, ArrayList<ErrorCode> errores) {
         ast = null;
-        this.nombreArchivoFuente = Compilador.carpetaFuente + "\\" + nombreArchivoFuente;        
+        this.nombreArchivoFuente = nombreArchivoFuente;        
         this.errores = errores;
         File archivoFuente = new File(this.nombreArchivoFuente);        
         archivoFuenteExistente = archivoFuente.exists();

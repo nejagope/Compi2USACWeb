@@ -100,6 +100,43 @@ NODO_CHTML ::= TAG_INI:ta NODOS_CHTML:ns TAG_FIN:tc {:
         RESULT = ta;
         if (ta.tipo != tc.tipo)
             agregarError(tc.lexema, tcleft+1, tcright+1, "Las etiquetas no coinciden. Se esperaba el cierre de" + ta.lexema);
+            
+        if (ta.tipo == TipoNodo.chtml){
+            NodoAST enc = ta.getHijo(0);
+            if (enc != null){
+                if (enc.tipo == TipoNodo.encabezado){
+                    for (NodoAST nodoEnc : enc.hijos){
+                        if (nodoEnc.tipo == TipoNodo.cjs || nodoEnc.tipo == TipoNodo.ccss){
+                            NodoAST atribs = nodoEnc.getHijo(0);
+                            String nombreArchivo = "";
+                            if (atribs != null){
+                                if (atribs.tipo == TipoNodo.atribs){
+                                    NodoAST elemento = atribs.getHijo(0);
+                                    if (elemento != null){
+                                        if (elemento.valor.toString().toLowerCase().equals("ruta")){
+                                            nombreArchivo = elemento.getHijo(0).lexema;                                                                                        
+                                        }
+                                    }
+                                }else if (atribs.tipo == TipoNodo.textoPlano){
+                                    nombreArchivo = atribs.lexema;
+                                }                                                                        
+                            }
+                            if (nombreArchivo.length() > 0){
+                                AnalisisSintactico sintactico = new AnalisisSintactico(nombreArchivo, errores);
+                                //se analiza el archivo fuente y se produce un Arbol de sintaxis abstracta (ast)
+                                if (sintactico.generarAST()){
+                                    nodoEnc.agregarHijo(sintactico.getAST().raiz);                                                      
+                                }
+                            }
+                        }else{
+                            agregarError(nodoEnc.lexema, nodoEnc.linea-1, nodoEnc.columna-1, "Se esperaba ccss o cjs");
+                        }
+                    }
+                }else{
+                    agregarError(enc.lexema, enc.linea-1, enc.columna-1, "Se esperaba el encabezado del archivo");
+                }
+            }
+        }
     :}
     | TAG_INI:ta TAG_FIN:tc {:
         RESULT = ta;

@@ -17,7 +17,7 @@ public class Compilador {
     ArrayList <ErrorCode> errores;
     String nombreArchivoFuente;
     
-    static String carpetaFuente;
+   static String carpetaFuente;
     
     
 
@@ -42,9 +42,9 @@ public class Compilador {
                 
                 if (archivoFuente.canRead()){
                     this.nombreArchivoFuente = archivoFuente.getName();
-                    Compilador.carpetaFuente = archivoFuente.getParent();
+                    carpetaFuente = archivoFuente.getParent();
                     //Análisis léxico y sintactico
-                    AnalisisSintactico sintactico = new AnalisisSintactico(this.nombreArchivoFuente, errores);
+                    AnalisisSintactico sintactico = new AnalisisSintactico(nombreArchivoFuente, errores);
                     //se analiza el archivo fuente y se produce un Arbol de sintaxis abstracta (ast)
                     sintactico.generarAST();
                     //se genera un grafo para visualizar el ast generado al final del analisis sintactico

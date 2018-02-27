@@ -82,35 +82,57 @@ parser code
                 break;
             case ccss:                
             case cjs:
-                
-                break;
-            case enlace:
-                
-                break;
-            case cuerpo:
-                
-                break;
-            case imagen:
-            case boton:
-                
-                break;            
-            case cajaOpciones:
-                
-                break;
-            case opcion:
-                
-                break;
-            case panel:
-            case texto:
-            case tabla:
-            case fila:
-            case celda:
-            case celdaEnc:
+            case titulo:
+            case texto:                
             case areaTexto:
             case cajaTexto:
+            case imagen:
+            case boton:
+            case enlace:
+            case opcion:
             case spinner:
-                
+                hijosAcep.add(TipoNodo.textoPlano);
+                break;                        
+            case cajaOpciones:
+                hijosAcep.add(TipoNodo.opcion);
                 break;
+            case tabla:
+                hijosAcep.add(TipoNodo.fila);
+                break;
+            case fila:
+                hijosAcep.add(TipoNodo.celdaEnc);
+                hijosAcep.add(TipoNodo.celda);
+                break;
+                
+            case cuerpo:
+            case panel:
+                hijosAcep.add(TipoNodo.tabla);
+                hijosAcep.add(TipoNodo.areaTexto);
+                hijosAcep.add(TipoNodo.cajaTexto);
+                hijosAcep.add(TipoNodo.texto);
+                hijosAcep.add(TipoNodo.imagen);
+                hijosAcep.add(TipoNodo.boton);
+                hijosAcep.add(TipoNodo.enlace);
+                hijosAcep.add(TipoNodo.spinner);
+                hijosAcep.add(TipoNodo.cajaOpciones);
+                hijosAcep.add(TipoNodo.panel);
+                hijosAcep.add(TipoNodo.salto);
+                break;                                      
+                        
+            case celda:
+                hijosAcep.add(TipoNodo.textoPlano);
+                hijosAcep.add(TipoNodo.boton);
+                hijosAcep.add(TipoNodo.imagen);
+                hijosAcep.add(TipoNodo.salto);
+                break;
+        }
+        for(NodoAST hijo: nodo.hijos){
+            if (hijo.tipo == TipoNodo.atribs)
+                continue;
+            if (!hijosAcep.contains(hijo.tipo)){
+                agregarError(hijo.tipo.toString(), hijo.linea -1, hijo.columna-1, "El componente " + nodo.tipo.toString() + " no puede contener a la etiqueta " + hijo.tipo.toString());
+                    hijo.omitir = true;
+            }
         }
     }
 
@@ -170,7 +192,7 @@ parser code
         if (nodoAtribs != null){
             for(NodoAST atrib: nodoAtribs.hijos){
                 if (!tiposAcep.contains(atrib.tipo)){
-                    agregarError(atrib.lexema, atrib.linea -1, atrib.columna-1, "No se puede aplicar el atributo " + atrib.lexema + " a la etiqueta " + nodo.lexema);
+                    agregarError(atrib.tipo.toString(), atrib.linea -1, atrib.columna-1, "No se puede aplicar el atributo " + atrib.lexema + " a la etiqueta " + nodo.tipo.toString());
                     atrib.omitir = true;
                 }
             }
@@ -238,7 +260,7 @@ NODO_CHTML ::= TAG_INI:ta NODOS_CHTML:ns TAG_FIN:tc {:
                                 if (atribs.tipo == TipoNodo.atribs){
                                     NodoAST elemento = atribs.getHijo(0);
                                     if (elemento != null){
-                                        if (elemento.valor.toString().toLowerCase().equals("ruta")){
+                                        if (elemento.lexema.toLowerCase().equals("ruta")){
                                             nombreArchivo = elemento.getHijo(0).lexema;                                                                                        
                                         }
                                     }
@@ -254,7 +276,7 @@ NODO_CHTML ::= TAG_INI:ta NODOS_CHTML:ns TAG_FIN:tc {:
                                 }
                             }
                         }else{
-                            agregarError(nodoEnc.lexema, nodoEnc.linea-1, nodoEnc.columna-1, "Se esperaba ccss o cjs");
+                            agregarError(nodoEnc.lexema, nodoEnc.linea-1, nodoEnc.columna-1, "Se esperaba titulo, ccss o cjs");
                         }
                     }
                 }else{
@@ -262,6 +284,8 @@ NODO_CHTML ::= TAG_INI:ta NODOS_CHTML:ns TAG_FIN:tc {:
                 }
             }
         }
+
+        verificarHijosApropiados(ta);
     :}
     | TAG_INI:ta TAG_FIN:tc {:
         RESULT = ta;

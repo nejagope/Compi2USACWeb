@@ -17,6 +17,9 @@ public class NodoAST {
     Object valor;    
     ArrayList <NodoAST> hijos;
     
+    //indica si debe omitirse al ejecutarse el código
+    public boolean omitir;
+    
     @Override
     public String toString(){
         String lexemaRed = lexema.concat("");        
@@ -30,7 +33,7 @@ public class NodoAST {
                 "     </table>";
         
         //return cad;
-        return tipo.toString() + "\n" + (lexema==null?"":lexema)+ "\n" + (valor==null?"":(valor.getClass().getName())) ;        
+        return tipo.toString() + "\n" + (lexema==null?"":lexema)+ "\n" + (valor==null?"":(valor.getClass().getName())) + "\n" + "Omitir: " + omitir ;        
     }
     
     public NodoAST(TipoNodo tipo, String lexema, int linea, int columna, String archivoFuente){
@@ -42,6 +45,7 @@ public class NodoAST {
         this.archivoFuente = archivoFuente;
         id = this.hashCode();
         hijos = new ArrayList();
+        omitir = false;
     }
     
     
@@ -55,6 +59,7 @@ public class NodoAST {
         id = this.hashCode();
         hijos = new ArrayList();
         this.archivoFuente = archivoFuente;
+        omitir = false;
     }
     
     
@@ -73,6 +78,7 @@ public class NodoAST {
         }
         
         this.archivoFuente = archivoFuente;
+        omitir = false;
     }
     
     /**CREA UN nodo y le agrega dos hijos*/
@@ -88,6 +94,7 @@ public class NodoAST {
         hijos.add(hijo1);
         hijos.add(hijo2);
         this.archivoFuente = archivoFuente;
+        omitir = false;
     }
     
     /**CREA UN nodo y agrega un hijo*/
@@ -102,6 +109,7 @@ public class NodoAST {
         hijos = new ArrayList();
         hijos.add(hijo1);     
         this.archivoFuente = archivoFuente;
+        omitir = false;
     }
     
     public void agregarHijo(NodoAST nodo){

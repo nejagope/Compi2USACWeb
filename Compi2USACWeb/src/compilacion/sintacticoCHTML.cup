@@ -49,6 +49,133 @@ parser code
     public void agregarError(String cadena, int linea, int columna, String mensaje){
         errores.add(new ErrorCode(TipoError.sintactico, linea, columna, cadena, mensaje, sourceFile));
     }
+
+    public boolean etiquetasCoinciden(NodoAST nodo1, NodoAST nodo2){
+        if (nodo1 == null || nodo2 == null)
+            return false;
+        return (nodo2.tipo.toString().startsWith(nodo1.tipo.toString()));            
+    }
+    
+    public boolean esEtiquetaInicio(NodoAST nodo){
+        if (nodo == null)
+            return false;
+        return (nodo.tipo.toString().endsWith("F"));         
+    }
+    
+    public boolean esEtiquetaFin(NodoAST nodo){ 
+        if (nodo == null)
+            return false;
+        return !esEtiquetaInicio(nodo);
+    }
+
+    public void verificarHijosApropiados(NodoAST nodo){
+        ArrayList<TipoNodo> hijosAcep = new ArrayList<>();
+        switch (nodo.tipo){
+            case chtml:
+                hijosAcep.add(TipoNodo.encabezado);
+                hijosAcep.add(TipoNodo.cuerpo);
+                break;
+            case encabezado:
+                hijosAcep.add(TipoNodo.titulo);
+                hijosAcep.add(TipoNodo.cjs);                
+                hijosAcep.add(TipoNodo.ccss);                
+                break;
+            case ccss:                
+            case cjs:
+                
+                break;
+            case enlace:
+                
+                break;
+            case cuerpo:
+                
+                break;
+            case imagen:
+            case boton:
+                
+                break;            
+            case cajaOpciones:
+                
+                break;
+            case opcion:
+                
+                break;
+            case panel:
+            case texto:
+            case tabla:
+            case fila:
+            case celda:
+            case celdaEnc:
+            case areaTexto:
+            case cajaTexto:
+            case spinner:
+                
+                break;
+        }
+    }
+
+    public void verificarAtributosApropiados(NodoAST nodo){
+        ArrayList<TipoNodo> tiposAcep = new ArrayList<>();
+        ArrayList<TipoNodo> tiposGenerales = new ArrayList<>();
+        tiposGenerales.add(TipoNodo.id);
+        tiposGenerales.add(TipoNodo.grupo);
+        tiposGenerales.add(TipoNodo.alto);
+        tiposGenerales.add(TipoNodo.ancho);
+        tiposGenerales.add(TipoNodo.alineado);
+        
+        switch (nodo.tipo){
+            case chtml:
+            case encabezado:
+                break;
+            case ccss:                
+            case cjs:
+                tiposAcep.add(TipoNodo.ruta);                
+                break;
+            case enlace:
+                tiposAcep.addAll(tiposGenerales);
+                tiposAcep.add(TipoNodo.ruta);                
+                break;
+            case cuerpo:
+                tiposAcep.add(TipoNodo.fondo);
+                tiposAcep.addAll(tiposGenerales);
+                break;
+            case imagen:
+            case boton:
+                tiposAcep.addAll(tiposGenerales);
+                tiposAcep.add(TipoNodo.ruta);
+                tiposAcep.add(TipoNodo.click);
+                break;            
+            case cajaOpciones:
+                tiposAcep.add(TipoNodo.click);
+                tiposAcep.addAll(tiposGenerales);
+                break;
+            case opcion:
+                tiposAcep.add(TipoNodo.valor);
+                tiposAcep.addAll(tiposGenerales);
+                break;
+            case panel:
+            case texto:
+            case tabla:
+            case fila:
+            case celda:
+            case celdaEnc:
+            case areaTexto:
+            case cajaTexto:
+            case spinner:
+                tiposAcep.addAll(tiposGenerales);
+                break;
+                
+        }
+        NodoAST nodoAtribs = nodo.getHijo(0);
+        if (nodoAtribs != null){
+            for(NodoAST atrib: nodoAtribs.hijos){
+                if (!tiposAcep.contains(atrib.tipo)){
+                    agregarError(atrib.lexema, atrib.linea -1, atrib.columna-1, "No se puede aplicar el atributo " + atrib.lexema + " a la etiqueta " + nodo.lexema);
+                    atrib.omitir = true;
+                }
+            }
+        }        
+    }
 :}
 
 action code
@@ -70,10 +197,8 @@ terminal String elementoDesconocido, textoPlano;
 terminal errorLex;
 
 non terminal S;
-non terminal NodoAST CHTML, ATRIB, NODO_CHTML, ATRIBS, TAG_INI, TAG_FIN, TAG_NAME, TAG_FIN_NAME; 
+non terminal NodoAST CHTML, ATRIB, NODO_CHTML, ATRIBS, TAG_INI, TAG_FIN, TAG_NAME, TAG_FIN_NAME, ELEMENTO; 
 non terminal ArrayList<NodoAST> NODOS_CHTML;
-
-non terminal String ELEMENTO_NAME;
 
 start with S;
 
@@ -98,8 +223,8 @@ NODOS_CHTML ::= NODOS_CHTML:es NODO_CHTML:e{:
 NODO_CHTML ::= TAG_INI:ta NODOS_CHTML:ns TAG_FIN:tc {:
         ta.hijos.addAll(ns);
         RESULT = ta;
-        if (ta.tipo != tc.tipo)
-            agregarError(tc.lexema, tcleft+1, tcright+1, "Las etiquetas no coinciden. Se esperaba el cierre de" + ta.lexema);
+        if (!etiquetasCoinciden(ta, tc))
+            agregarError(tc.lexema, tcleft+1, tcright+1, "Las etiquetas no coinciden. Se esperaba el cierre de " + ta.lexema);
             
         if (ta.tipo == TipoNodo.chtml){
             NodoAST enc = ta.getHijo(0);
@@ -140,6 +265,8 @@ NODO_CHTML ::= TAG_INI:ta NODOS_CHTML:ns TAG_FIN:tc {:
     :}
     | TAG_INI:ta TAG_FIN:tc {:
         RESULT = ta;
+        if (!etiquetasCoinciden(ta, tc))
+            agregarError(tc.lexema, tcleft+1, tcright+1, "Las etiquetas no coinciden. Se esperaba el cierre de" + ta.lexema);
     :}    
     | textoPlano:t {: 
         RESULT = new NodoAST(TipoNodo.textoPlano, t, tleft, tright, parser.sourceFile); 
@@ -152,12 +279,15 @@ NODO_CHTML ::= TAG_INI:ta NODOS_CHTML:ns TAG_FIN:tc {:
 TAG_INI ::= LT TAG_NAME:tn ATRIBS:atribs GT {:        
         tn.agregarHijo(atribs);
         RESULT = tn;
+        verificarAtributosApropiados(tn);
     :}
     | LT TAG_NAME:tn GT {:
         RESULT = tn;
     :}
     | error GT:e {:        
-        RESULT = new NodoAST(TipoNodo.errorSintactico, "Error antes de <", eleft, eright, parser.sourceFile);
+        NodoAST nodoErr = new NodoAST(TipoNodo.errorSintactico, "Error antes de <", eleft, eright, parser.sourceFile);
+        nodoErr.omitir = true;
+        RESULT = nodoErr;
     :}    
 ;
 
@@ -185,12 +315,15 @@ ATRIBS ::= ATRIBS:atribs ATRIB:atrib {:
     :}
 ;
 
-ATRIB ::= ELEMENTO_NAME:e EQ cadenaValor:c ptoComa {:        
+ATRIB ::= ELEMENTO:e EQ cadenaValor:c ptoComa {:        
         NodoAST nodoValor = new NodoAST(TipoNodo.cadenaValor, c, cleft, cright, parser.sourceFile);
-        RESULT = new NodoAST(TipoNodo.elemento, e, eleft, eright, parser.sourceFile, nodoValor);        
+        e.agregarHijo(nodoValor);
+        RESULT = e;//new NodoAST(TipoNodo.elemento, e, eleft, eright, parser.sourceFile, nodoValor);        
     :}
     | error ptoComa:p {:        
-        RESULT = new NodoAST(TipoNodo.errorSintactico, "Error antes de ;", pleft, pright, parser.sourceFile);
+        NodoAST nodoErr = new NodoAST(TipoNodo.errorSintactico, "Error antes de ;", pleft, pright, parser.sourceFile);
+        nodoErr.omitir = true;
+        RESULT = nodoErr;
     :}
 ;
 
@@ -240,18 +373,14 @@ TAG_FIN_NAME ::=
     | spinnerF:n  {: RESULT = new NodoAST(TipoNodo.spinnerF, n, nleft, nright, parser.sourceFile); :}    
 ;
 
-ELEMENTO_NAME ::=
-      ruta:n {: RESULT = n; :}
-    | fondo:n {: RESULT = n; :}
-    | click:n {: RESULT = n; :}
-    | id:n {: RESULT = n; :}
-    | grupo:n {: RESULT = n; :}    
-    | alto:n {: RESULT = n; :}
-    | ancho:n {: RESULT = n; :}        
-    | alineado:n {: RESULT = n; :}
-    | valor:n {: RESULT = n; :}
-    | elementoDesconocido:n {: 
-        RESULT = n;         
-        agregarError(n, nleft+1, nright+1, "Nombre de elemento desconocido");    
-    :}
+ELEMENTO ::=
+      ruta:n {: RESULT = new NodoAST(TipoNodo.ruta, n, nleft, nright, parser.sourceFile); :}
+    | fondo:n {: RESULT = new NodoAST(TipoNodo.fondo, n, nleft, nright, parser.sourceFile); :}
+    | click:n {: RESULT = new NodoAST(TipoNodo.click, n, nleft, nright, parser.sourceFile); :}
+    | id:n {: RESULT = new NodoAST(TipoNodo.id, n, nleft, nright, parser.sourceFile); :}
+    | grupo:n {: RESULT = new NodoAST(TipoNodo.grupo, n, nleft, nright, parser.sourceFile); :}
+    | alto:n {: RESULT = new NodoAST(TipoNodo.alto, n, nleft, nright, parser.sourceFile); :}
+    | ancho:n {: RESULT = new NodoAST(TipoNodo.ancho, n, nleft, nright, parser.sourceFile); :}
+    | alineado:n {: RESULT = new NodoAST(TipoNodo.alineado, n, nleft, nright, parser.sourceFile); :}
+    | valor:n {: RESULT = new NodoAST(TipoNodo.valor, n, nleft, nright, parser.sourceFile); :}    
 ;

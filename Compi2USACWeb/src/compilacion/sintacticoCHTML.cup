@@ -8,14 +8,18 @@ parser code
     //la lista global de errores del analizador
     public ArrayList <ErrorCode> errores;
 
+    //tabla símbolos
+    public TablaSimbolos tablaSimbolos;
+    
     //nombre del archivo fuente
     public String sourceFile;
 
 
-    public ParserCHTML(java_cup.runtime.Scanner s, String archivoFuente,  ArrayList <ErrorCode> errores){
+    public ParserCHTML(java_cup.runtime.Scanner s, String archivoFuente,  ArrayList <ErrorCode> errores, TablaSimbolos tablaSimbolos){
         super(s);
         this.sourceFile = archivoFuente;
         this.errores = errores;
+        this.tablaSimbolos = tablaSimbolos;
     }
     
     
@@ -269,7 +273,7 @@ NODO_CHTML ::= TAG_INI:ta NODOS_CHTML:ns TAG_FIN:tc {:
                                 }                                                                        
                             }
                             if (nombreArchivo.length() > 0){
-                                AnalisisSintactico sintactico = new AnalisisSintactico(nombreArchivo, errores);
+                                AnalisisSintactico sintactico = new AnalisisSintactico(nombreArchivo, errores, tablaSimbolos);
                                 //se analiza el archivo fuente y se produce un Arbol de sintaxis abstracta (ast)
                                 if (sintactico.generarAST()){
                                     nodoEnc.agregarHijo(sintactico.getAST().raiz);                                                      

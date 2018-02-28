@@ -13,6 +13,7 @@ import java.util.ArrayList;
  * @author Nelson Jair
  */
 public class AnalisisSintactico {
+    TablaSimbolos tablaSimbolos;
     AST ast;
     String nombreArchivoFuente;
     ArrayList <ErrorCode> errores;
@@ -25,9 +26,10 @@ public class AnalisisSintactico {
     //se utiliza para darles un id a los nodos del arbol
     private int indiceNodo;
 
-    public AnalisisSintactico(String nombreArchivoFuente, ArrayList<ErrorCode> errores) {
+    public AnalisisSintactico(String nombreArchivoFuente, ArrayList<ErrorCode> errores, TablaSimbolos tablaSimbolos) {
         ast = null;
         this.nombreArchivoFuente = nombreArchivoFuente;        
+        this.tablaSimbolos = tablaSimbolos;
         this.errores = errores;
         File archivoFuente = new File(this.nombreArchivoFuente);        
         archivoFuenteExistente = archivoFuente.exists();
@@ -81,16 +83,17 @@ public class AnalisisSintactico {
                 
         try{
             if (nombreArchivoFuente.endsWith(".chtml"))
-                parser = new ParserCHTML(scanner, nombreArchivoFuente, errores);
+                parser = new ParserCHTML(scanner, nombreArchivoFuente, errores, tablaSimbolos);
             else if (nombreArchivoFuente.endsWith(".cjs"))
-                parser = new ParserCJS(scanner, nombreArchivoFuente, errores);
+                parser = new ParserCJS(scanner, nombreArchivoFuente, errores, tablaSimbolos);
             else if (nombreArchivoFuente.endsWith(".ccss"))
-                parser = new ParserCCSS(scanner, nombreArchivoFuente, errores);
+                parser = new ParserCCSS(scanner, nombreArchivoFuente, errores, tablaSimbolos);
         
             parser.parse();
             analisisExitoso = true;
         }catch(Exception ex){
             errores.add(new ErrorCode(TipoError.otro, "No se pudo ejecutar el parseado del archivo" + nombreArchivoFuente, ex.toString()));            
+            ex.printStackTrace();
             scanner = null;
             parser = null;
             return false;

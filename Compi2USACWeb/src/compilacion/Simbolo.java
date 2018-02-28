@@ -51,6 +51,10 @@ public class Simbolo {
     public String colorTex;
     public String autoRedimension;
     
+    public Simbolo(){
+        
+    }
+    
     public Simbolo(NodoAST nodo){
         agregarATabla = false;
         
@@ -98,6 +102,12 @@ public class Simbolo {
             
         }
         
+    }
+    
+    public String toString(){
+        String val = String.format("Tipo: %s; Id: %s; Ámbito: %s", tipo, id, ambito);
+        
+        return val;
     }
         
 }

@@ -8,14 +8,19 @@ parser code
     //la lista global de errores del analizador
     public ArrayList <ErrorCode> errores;
 
+    //tabla símbolos
+    public TablaSimbolos tablaSimbolos;
+    
+
     //nombre del archivo fuente
     public String sourceFile;
 
 
-    public ParserCCSS(java_cup.runtime.Scanner s, String archivoFuente,  ArrayList <ErrorCode> errores){
+    public ParserCCSS(java_cup.runtime.Scanner s, String archivoFuente,  ArrayList <ErrorCode> errores, TablaSimbolos tablaSimbolos){
         super(s);
         this.sourceFile = archivoFuente;
         this.errores = errores;
+        this.tablaSimbolos = tablaSimbolos;
     }
     
     

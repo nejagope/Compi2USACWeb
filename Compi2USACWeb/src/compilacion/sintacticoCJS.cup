@@ -16,14 +16,19 @@ public AST ast;
 //la lista global de errores del analizador
 public ArrayList <ErrorCode> errores;
 
+//tabla símbolos
+public TablaSimbolos tablaSimbolos;
+
+
 //nombre del archivo fuente
 public String sourceFile;
 
 
-public ParserCJS(java_cup.runtime.Scanner s, String archivoFuente,  ArrayList <ErrorCode> errores){
+public ParserCJS(java_cup.runtime.Scanner s, String archivoFuente,  ArrayList <ErrorCode> errores, TablaSimbolos tablaSimbolos){
     super(s);
     this.sourceFile = archivoFuente;
     this.errores = errores;
+    this.tablaSimbolos = tablaSimbolos;
 }
 
 public AST getAST(){
@@ -90,6 +95,7 @@ start with S;
 S ::= PROGRAMA:p{:
         parser.ast = new AST();
         parser.ast.raiz = p;
+        agregarSimbolosATabla(p);
     :}
 ;
 

@@ -44,7 +44,7 @@ public class Compilador {
                     this.nombreArchivoFuente = archivoFuente.getName();
                     carpetaFuente = archivoFuente.getParent();
                     //Análisis léxico y sintactico
-                    AnalisisSintactico sintactico = new AnalisisSintactico(nombreArchivoFuente, errores);
+                    AnalisisSintactico sintactico = new AnalisisSintactico(nombreArchivoFuente, errores, tablaSimbolos);
                     //se analiza el archivo fuente y se produce un Arbol de sintaxis abstracta (ast)
                     sintactico.generarAST();
                     //se genera un grafo para visualizar el ast generado al final del analisis sintactico
@@ -71,18 +71,7 @@ public class Compilador {
     
     
     public void mostrarTablaSimbolosConsola(){
-        System.out.println("---------------------TABLA DE SIMBOLOS------------------------");
-        for (Simbolo sim : tablaSimbolos){
-            System.out.println(sim.id+ "; " + sim.tipo + "; ");
-            /*
-            if (sim.tablaSimbolos != null){
-                System.out.println("\tContiene sub tabla con " + sim.tablaSimbolos.size() + " elementos");
-                for(Simbolo subSim: sim.tablaSimbolos){
-                    System.out.println("\t" + subSim.nombre + "; " + subSim.tipo + "; " + subSim.tipoRetorno);
-                }
-            }
-            */
-        }
+       System.out.println(tablaSimbolos.toString());
     }
     
     public void mostrarErroresConsola(){

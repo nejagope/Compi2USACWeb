@@ -9,5 +9,5 @@ package compilacion;
  * @author Nelson Jair
  */
 public enum TipoSimbolo {
-    variable, funcion, procedimiento, metodo_main
+    componente, funcion, variable, estilo,
 }

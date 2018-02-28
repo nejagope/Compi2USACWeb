@@ -111,12 +111,10 @@ INSTRUCCIONES ::= INSTRUCCIONES:is INSTRUCCION:i {:
     :}
 ;
 
-INSTRUCCION ::= SENTENCIA:i
-    {:
+INSTRUCCION ::= SENTENCIA:i{:
         RESULT = i;
     :}
-    | FUNCION:i
-    {:
+    | FUNCION:i {:
         RESULT = i;
     :}
 ;

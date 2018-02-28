@@ -73,7 +73,7 @@ public class Compilador {
     public void mostrarTablaSimbolosConsola(){
         System.out.println("---------------------TABLA DE SIMBOLOS------------------------");
         for (Simbolo sim : tablaSimbolos){
-            System.out.println(sim.nombre + "; " + sim.tipo + "; ");
+            System.out.println(sim.id+ "; " + sim.tipo + "; ");
             /*
             if (sim.tablaSimbolos != null){
                 System.out.println("\tContiene sub tabla con " + sim.tablaSimbolos.size() + " elementos");

@@ -125,6 +125,13 @@ public class NodoAST {
         }
     }
     
+    public NodoAST getHijo(TipoNodo tipo){
+        for(NodoAST hijo : this.hijos)
+            if (hijo.tipo == tipo)
+                return hijo;
+        return null;        
+    }
+    
     public boolean tieneHijos(){
         if (hijos.size() > 0)
             return true;

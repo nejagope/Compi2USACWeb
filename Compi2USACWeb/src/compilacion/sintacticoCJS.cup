@@ -39,6 +39,84 @@ public ArrayList <ErrorCode> getErrores(){
     return errores;
 }
 
+String ambito = "global";
+ArrayList <NodoAST> llamadasFuncion = new ArrayList<>();
+public void agregarSimbolosATabla(NodoAST nodo){
+    if (nodo == null)
+        return;
+    
+    switch(nodo.tipo){
+        case funcion:            
+            ambito = nodo.lexema; //nombre de la funcion
+            NodoAST nodoParams = nodo.getHijo(TipoNodo.parametros);
+            //se crea el símbolo de la funcion
+            Simbolo sFun = new Simbolo();
+            sFun.id = nodo.lexema;
+            sFun.tipo = TipoSimbolo.funcion;
+            sFun.ambito = "global";
+            sFun.parametros = new ArrayList<>();
+                        
+            if (nodoParams != null){
+                ambito = sFun.id + sFun.parametros.size();
+                for(NodoAST param : nodoParams.hijos){
+                    Simbolo sParam = new Simbolo();
+                    sParam.id = param.lexema;
+                    sParam.tipo = TipoSimbolo.variable;
+                    sParam.ambito = ambito;
+                    sParam.nodo = param;
+                    sFun.parametros.add(sParam);
+                }
+            }
+            
+            if (!tablaSimbolos.agregarFuncion(sFun)){
+                errores.add(new ErrorCode(TipoError.semantico, nodo.linea, nodo.columna, nodo.lexema, "La función " + nodo.lexema + " ya ha sido declarada", sourceFile));
+                nodo.omitir = true;
+            }else{
+                for (Simbolo sParam : sFun.parametros){
+                    if (!tablaSimbolos.agregarVariable(sParam)){
+                        errores.add(new ErrorCode(TipoError.semantico, sParam.nodo.linea, sParam.nodo.columna, sParam.id, "Parámetro " + sParam.id + " ya ha sido declarado", sourceFile));
+                        nodo.omitir = true;
+                    }
+                }
+            }
+                        
+            agregarSimbolosATabla(nodo.getHijo(TipoNodo.sentencias));
+            ambito = "global";
+            return;
+            
+        case declaracion:
+            NodoAST nodoID = nodo.getHijo(0);
+            if (nodoID.tipo == TipoNodo.asignacion)
+                nodoID = nodo.getHijo(0).getHijo(0);
+            Simbolo s3 = new Simbolo();
+            s3.id = nodoID.lexema;
+            s3.tipo = TipoSimbolo.variable;
+            s3.ambito = ambito;
+            if (!tablaSimbolos.agregarVariable(s3)){
+                errores.add(new ErrorCode(TipoError.semantico, nodoID.linea, nodo.columna, nodoID.lexema, "Variable " + nodoID.lexema + " ya ha sido declarada", sourceFile));
+                nodo.omitir = true;
+            }            
+            break;
+            
+        case llamadaFuncion:
+            llamadasFuncion.add(nodo);
+            break;
+            
+        case identificador:            
+            if (tablaSimbolos.getVariable(nodo.lexema, TipoSimbolo.variable, ambito) == null
+                    && tablaSimbolos.getVariable(nodo.lexema, TipoSimbolo.variable, "global") == null){
+                errores.add(new ErrorCode(TipoError.semantico, nodo.linea, nodo.columna, nodo.lexema, "La variable " + nodo.lexema + " no ha sido declarada", sourceFile));
+                nodo.omitir = true;
+            }
+            break;
+    }
+    
+    for (NodoAST hijo: nodo.hijos){
+        agregarSimbolosATabla(hijo);
+    }
+}
+
+
 /**Metodo al que se llama automáticamente ante algún error sintactico.*/
 public void syntax_error(Symbol s){
 

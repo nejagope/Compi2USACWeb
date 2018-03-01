@@ -122,7 +122,7 @@ REGLAS ::= REGLAS:lista REGLA:r{:
 REGLA ::= CONJUNTO:c ESTILOS:e {:
         NodoAST nodoRegla = new NodoAST(TipoNodo.regla, "REGLA", cleft, cright, parser.sourceFile, c);
         nodoRegla.hijos.addAll(e);
-        RESULT = nodoRegla;
+        RESULT = nodoRegla;        
     :}
 ;
 
@@ -157,6 +157,7 @@ ESTILO ::=  NOMBRE_ESTILO:e asignacion VALORES:vs ptoComa {:
         e.hijos.addAll(vs); 
         RESULT = e;
     :}
+    | error:e ptoComa {: RESULT = new NodoAST(TipoNodo.errorSintactico, "ERR", eleft, eright , parser.sourceFile);:}
 ;
 
 NOMBRE_ESTILO ::= alineado:e {:RESULT = new NodoAST(TipoNodo.alineado, e, eleft, eright, parser.sourceFile); :}

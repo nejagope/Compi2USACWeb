@@ -33,7 +33,7 @@ public class NodoAST {
                 "     </table>";
         
         //return cad;
-        return tipo.toString() + "\n" + (lexema==null?"":lexema)+ "\n" + (valor==null?"":(valor.getClass().getName())) + "\n" + "Omitir: " + omitir ;        
+        return tipo.toString() + "\n" + (lexema==null?"":lexema)+ "\n" + (valor==null?"":(valor.getClass().getName())) + "\n" + "Omitir: " + omitir  + "\n" + "id: " + id;        
     }
     
     public NodoAST(TipoNodo tipo, String lexema, int linea, int columna, String archivoFuente){

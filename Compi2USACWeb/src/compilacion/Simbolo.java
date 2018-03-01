@@ -81,7 +81,7 @@ public class Simbolo {
                 //Obtener el id o clase, en dado caso se agrega a la tabla de símbolos
                 NodoAST atribs = nodo.getHijo(TipoNodo.atribs);
                 if (atribs != null){
-                    NodoAST nodoID = atribs.getHijo(TipoNodo.identificador);
+                    NodoAST nodoID = atribs.getHijo(TipoNodo.id);
                     NodoAST nodoGrupo = atribs.getHijo(TipoNodo.grupo);
                     if (nodoID != null){                        
                         NodoAST nodoValor = nodoID.getHijo(TipoNodo.cadenaValor);
@@ -93,19 +93,45 @@ public class Simbolo {
                         if (nodoValor != null)
                             this.grupo = nodoValor.lexema;
                     }
-                    if (this.id != null || this.grupo != null)
+                    if (this.id != null || this.grupo != null){
+                        this.tipo = TipoSimbolo.componente;
                         agregarATabla = true;
+                        this.nodo = nodo;                        
+                    }
                 }
                 break;
             
-            //cjs
-            
+            //ccss
+            case regla:
+                NodoAST nodoConjunto = nodo.getHijo(TipoNodo.conjunto);
+                if (nodoConjunto != null){
+                    NodoAST nodoID = nodoConjunto.getHijo(TipoNodo.id);
+                    NodoAST nodoGrupo = nodoConjunto.getHijo(TipoNodo.grupo);
+                    NodoAST nodoValor = nodoConjunto.getHijo(TipoNodo.identificador);
+                    if (nodoID != null){                                               
+                        if (nodoValor != null)
+                            this.id = nodoValor.lexema;
+                    }
+                    if (nodoGrupo != null){                                                
+                        if (nodoValor != null)
+                            this.grupo = nodoValor.lexema;
+                    }
+                    
+                    if (id != null || grupo != null){
+                        this.nodo = nodo;
+                        this.tipo = TipoSimbolo.estilo;
+                        this.agregarATabla = true;
+                    }
+                }
+                                
+                break;
+           
         }
         
     }
     
     public String toString(){
-        String val = String.format("Tipo: %s; Id: %s; Ámbito: %s", tipo, id, ambito);
+        String val = String.format("Tipo: %s; Id: %s; Grupo: %s; Ámbito: %s", tipo, id, grupo, ambito);
         
         return val;
     }

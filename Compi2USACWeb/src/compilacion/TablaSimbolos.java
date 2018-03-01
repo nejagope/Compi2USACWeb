@@ -26,6 +26,15 @@ public class TablaSimbolos extends ArrayList <Simbolo>{
         return null;        
     }
     
+    
+    public boolean agregarVariable(Simbolo s){
+        if (getVariable(s.id, s.tipo, s.ambito) == null){
+            this.add(s);
+            return true;
+        }
+        return false;        
+    }
+    
     public Simbolo getFuncion(String id,  int cantParametros){
         for (Simbolo sim : this){
             try{
@@ -51,14 +60,22 @@ public class TablaSimbolos extends ArrayList <Simbolo>{
         }
         this.remove(fun);
     }
-
-    public boolean agregarVariable(Simbolo s){
-        if (getVariable(s.id, s.tipo, s.ambito) == null){
-            this.add(s);
-            return true;
+    
+    public Simbolo getComponenteByID(String id){
+         for (Simbolo sim : this){
+            try{
+                if (sim.id.equals(id) && sim.tipo == TipoSimbolo.componente)
+                    return sim;
+            }catch(Exception ex){}
         }
-        return false;        
+        return null;  
     }
+    
+    public void agregarComponente(Simbolo s){
+        if (s!= null)
+            this.add(s);
+    }
+
     
     @Override
     public String toString(){

@@ -57,7 +57,7 @@ public void agregarSimbolosATabla(NodoAST nodo){
             sFun.parametros = new ArrayList<>();
                         
             if (nodoParams != null){
-                ambito = sFun.id + sFun.parametros.size();
+                ambito = sFun.id + nodoParams.hijos.size();
                 for(NodoAST param : nodoParams.hijos){
                     Simbolo sParam = new Simbolo();
                     sParam.id = param.lexema;

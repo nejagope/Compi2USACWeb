@@ -202,6 +202,15 @@ parser code
             }
         }        
     }
+
+    public void crearYAgregarSimbolos(NodoAST nodo){
+        Simbolo s = new Simbolo(nodo);
+        if (s.agregarATabla)
+            tablaSimbolos.agregarComponente(s);
+        for(NodoAST hijo: nodo.hijos){
+            crearYAgregarSimbolos(hijo);
+        }
+    }
 :}
 
 action code
@@ -231,7 +240,8 @@ start with S;
 //**********************************************************************************************************
 S ::= NODO_CHTML:n{:
     parser.ast = new AST();
-    parser.ast.raiz = n;
+    parser.ast.raiz = n;  
+    crearYAgregarSimbolos(n);
 :};
 
 NODOS_CHTML ::= NODOS_CHTML:es NODO_CHTML:e{:
@@ -250,8 +260,8 @@ NODO_CHTML ::= TAG_INI:ta NODOS_CHTML:ns TAG_FIN:tc {:
         ta.hijos.addAll(ns);
         RESULT = ta;
         if (!etiquetasCoinciden(ta, tc))
-            agregarError(tc.lexema, tcleft+1, tcright+1, "Las etiquetas no coinciden. Se esperaba el cierre de " + ta.lexema);
-            
+            agregarError(tc.lexema, tcleft+1, tcright+1, "Las etiquetas no coinciden. Se esperaba el cierre de " + ta.lexema);        
+   
         if (ta.tipo == TipoNodo.chtml){
             NodoAST enc = ta.getHijo(0);
             if (enc != null){

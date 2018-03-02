@@ -9,6 +9,11 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.Image;
+import java.awt.Toolkit;
+import java.io.File;
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 
@@ -29,11 +34,15 @@ public class MotorExplorador {
     
     public void iniciar(){
         tituloPestaña = null;
-        NodoAST nodoCHTML = ts.getComponenteByID("chtml").nodo;        
-        agregarComponentes(documento, nodoCHTML);        
+        if (ts != null){
+            NodoAST nodoCHTML = ts.getComponenteByID("chtml").nodo;        
+            agregarComponentes(documento, nodoCHTML);        
+        }
     }
     
     private void agregarComponentes(Container container, NodoAST nodo){
+        if (nodo == null)
+            return;
         int x=0, y=0;
         int widthContainer = 0, heightContainer = 0;
         for (NodoAST n: nodo.hijos){
@@ -84,8 +93,58 @@ public class MotorExplorador {
                         ta.setPreferredSize(getDimension(nodo));
                         return ta;
                     }
-                break;
+                    break;
+            case imagen:
+                    String ruta = getValorAtributo(nodo, TipoNodo.ruta, true);
+                    Object alto = getValorAtributo(nodo, TipoNodo.alto, false, Double.class);
+                    Object ancho = getValorAtributo(nodo, TipoNodo.ancho, false, Double.class);                    
+                    int width =0, height =0;
+                    if (alto != null)
+                        height = (int)Math.ceil((double)alto);
+                    if (ancho != null)
+                        width = (int)Math.ceil((double)ancho);
+                    
+                    if (ruta != null){
+                        File archivo = new File(ruta);
+                        Image imagen = Toolkit.getDefaultToolkit().getImage( archivo.getAbsolutePath() );
+                        
+                        if (alto != null && ancho != null)                            
+                            imagen = imagen.getScaledInstance(width, height, 1);
+                        
+                        ImageIcon icono = new ImageIcon(imagen);
+                        JLabel labelImg = new JLabel(icono);
+                        labelImg.setPreferredSize(new Dimension(icono.getIconWidth(), icono.getIconHeight()));
+                        labelImg.setSize(labelImg.getPreferredSize());
+                        return labelImg;
+                    }
+                    break;
         }        
+        return null;
+    }
+    
+    private Object getValorAtributo(NodoAST nodo, TipoNodo tipo, boolean buscarEnContenido, Class clase){
+        String valStr = getValorAtributo(nodo, tipo, buscarEnContenido);
+        try{
+            if (clase == Double.class){
+                return Double.parseDouble(valStr);
+            }
+        }catch(Exception ex){
+        }
+        return null;
+    }
+    
+    private String getValorAtributo(NodoAST nodo, TipoNodo tipo, boolean buscarEnContenido){
+        NodoAST atribs = nodo.getHijo(TipoNodo.atribs);
+        if (atribs != null){
+            NodoAST nodoAtrib = atribs.getHijo(tipo);
+            if (nodoAtrib != null){
+                return nodoAtrib.getHijo(TipoNodo.cadenaValor).lexema;                
+            }else if (buscarEnContenido){
+                nodoAtrib = atribs.getHijo(TipoNodo.textoPlano);
+                if (nodoAtrib != null)
+                    return nodoAtrib.lexema;
+            }
+        }
         return null;
     }
     

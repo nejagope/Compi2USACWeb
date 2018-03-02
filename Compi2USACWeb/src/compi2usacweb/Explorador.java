@@ -23,12 +23,14 @@ import javax.swing.border.BevelBorder;
  */
 public class Explorador extends javax.swing.JFrame {
     
+    public String archivoPorDefecto = "C:/Users/NELSONJAIR/Documents/NetBeansProjects/Compi2USACWeb/Compi2USACWeb/src/compilacion/entrada1.chtml";
     public MotorExplorador motor;
     /**
      * Creates new form Explorador
      */
     public Explorador() {        
         initComponents();
+        this.txtUrl.setText(archivoPorDefecto);
     }
 
     /**

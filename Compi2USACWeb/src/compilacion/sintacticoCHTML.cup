@@ -267,7 +267,9 @@ NODO_CHTML ::= TAG_INI:ta NODOS_CHTML:ns TAG_FIN:tc {:
             if (enc != null){
                 if (enc.tipo == TipoNodo.encabezado){
                     for (NodoAST nodoEnc : enc.hijos){
-                        if (nodoEnc.tipo == TipoNodo.cjs || nodoEnc.tipo == TipoNodo.ccss){
+                        if (nodoEnc.tipo == TipoNodo.cjs || nodoEnc.tipo == TipoNodo.ccss || nodoEnc.tipo == TipoNodo.titulo){
+                            if (nodoEnc.tipo == TipoNodo.titulo)
+                                continue;
                             NodoAST atribs = nodoEnc.getHijo(0);
                             String nombreArchivo = "";
                             if (atribs != null){

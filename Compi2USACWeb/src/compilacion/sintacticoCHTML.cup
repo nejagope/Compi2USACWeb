@@ -124,6 +124,7 @@ parser code
                 break;                                      
                         
             case celda:
+            case celdaEnc:
                 hijosAcep.add(TipoNodo.textoPlano);
                 hijosAcep.add(TipoNodo.boton);
                 hijosAcep.add(TipoNodo.imagen);

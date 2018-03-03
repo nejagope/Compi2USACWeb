@@ -8,14 +8,9 @@ package compi2usacweb;
 import compilacion.Compilador;
 import compilacion.MotorExplorador;
 import java.awt.Color;
-import java.awt.Dimension;
 import java.io.File;
-import javafx.scene.layout.Border;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
-import javax.swing.border.BevelBorder;
 
 /**
  *
@@ -23,7 +18,7 @@ import javax.swing.border.BevelBorder;
  */
 public class Explorador extends javax.swing.JFrame {
     
-    public String archivoPorDefecto = "C:/Users/NELSONJAIR/Documents/NetBeansProjects/Compi2USACWeb/Compi2USACWeb/src/compilacion/entrada1.chtml";
+    public String archivoPorDefecto = Env.PAGINA_POR_DEFECTO;
     public MotorExplorador motor;
     /**
      * Creates new form Explorador
@@ -47,6 +42,7 @@ public class Explorador extends javax.swing.JFrame {
         tabsContainer = new javax.swing.JTabbedPane();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
+        menuItemRefresh = new javax.swing.JMenuItem();
         jMenu2 = new javax.swing.JMenu();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
@@ -75,6 +71,17 @@ public class Explorador extends javax.swing.JFrame {
         });
 
         jMenu1.setText("File");
+
+        menuItemRefresh.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F5, 0));
+        menuItemRefresh.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/refresh.png"))); // NOI18N
+        menuItemRefresh.setText("Refresh");
+        menuItemRefresh.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                menuItemRefreshActionPerformed(evt);
+            }
+        });
+        jMenu1.add(menuItemRefresh);
+
         jMenuBar1.add(jMenu1);
 
         jMenu2.setText("Edit");
@@ -89,14 +96,12 @@ public class Explorador extends javax.swing.JFrame {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(tabsContainer)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(tabsContainer)
-                        .addContainerGap())
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(txtUrl, javax.swing.GroupLayout.PREFERRED_SIZE, 975, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(txtUrl, javax.swing.GroupLayout.DEFAULT_SIZE, 983, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnRefresh, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 14, Short.MAX_VALUE))))
+                        .addComponent(btnRefresh, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -120,6 +125,10 @@ public class Explorador extends javax.swing.JFrame {
     private void txtUrlActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtUrlActionPerformed
         refrescar();
     }//GEN-LAST:event_txtUrlActionPerformed
+
+    private void menuItemRefreshActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuItemRefreshActionPerformed
+        refrescar();
+    }//GEN-LAST:event_menuItemRefreshActionPerformed
 
     private void refrescar(){
 
@@ -209,6 +218,7 @@ public class Explorador extends javax.swing.JFrame {
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
     private javax.swing.JMenuBar jMenuBar1;
+    private javax.swing.JMenuItem menuItemRefresh;
     private javax.swing.JTabbedPane tabsContainer;
     private javax.swing.JTextField txtUrl;
     // End of variables declaration//GEN-END:variables

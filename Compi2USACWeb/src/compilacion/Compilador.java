@@ -29,7 +29,7 @@ public class Compilador {
         
     
     /** Realiza el analisis lexico, sintactico y semántico del archivo fuente y 
-     * retorna @true si no se encontraron errores o, de lo contrario, @false
+     * retorna @true si se pudo generar el AST, de lo contrario, @false
      */
     public boolean compilar(String nombreArchivoFuente){
         this.nombreArchivoFuente = nombreArchivoFuente;
@@ -46,10 +46,11 @@ public class Compilador {
                     //Análisis léxico y sintactico
                     AnalisisSintactico sintactico = new AnalisisSintactico(nombreArchivoFuente, errores, tablaSimbolos);
                     //se analiza el archivo fuente y se produce un Arbol de sintaxis abstracta (ast)
-                    sintactico.generarAST();
+                    boolean resultado = sintactico.generarAST();
                     //se genera un grafo para visualizar el ast generado al final del analisis sintactico
                     sintactico.generarGrafoAST();
-
+                    
+                    return resultado;
                     //Análisis semántco
                     /*AnalisisSemantico a_sem = new AnalisisSemantico(tablaSimbolos, errores, sintactico.getAST());
                         //se recopilan en en una lista los simbolos declarados en el archivo fuente y en sus archvios importados
@@ -58,7 +59,7 @@ public class Compilador {
                         a_sem.comprobarTipos();                
                      */
                 }else{
-                    errores.add(new ErrorCode(TipoError.archivoNoPuedeLeerse, nombreArchivoFuente, "No puede leerse el archivo especificado"));
+                    errores.add(new ErrorCode(TipoError.archivoNoPuedeLeerse, nombreArchivoFuente, "No puede leerse el archivo especificado"));                    
                 }
             }else{
                 errores.add(new ErrorCode(TipoError.extensionNoPermida, nombreArchivoFuente, "La extensión del archivo no es una extensión permitida"));
@@ -66,7 +67,7 @@ public class Compilador {
         }else{ //archivo a compilar no existe
             errores.add(new ErrorCode(TipoError.archivoNoEncontrado, nombreArchivoFuente, "No se halló el archivo especificado"));
         }
-        return errores.isEmpty();
+        return false;
     }
     
     

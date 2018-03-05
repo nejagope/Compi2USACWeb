@@ -5,6 +5,10 @@
  */
 package compilacion;
 
+import compi2usacweb.Estilo;
+import compi2usacweb.Explorador;
+import compi2usacweb.Navegacion;
+import compi2usacweb.TabNavegador;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
@@ -17,44 +21,118 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.font.TextAttribute;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Map;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
+import javax.swing.border.EtchedBorder;
 
 /**
  *
  * @author Njgonzalez
  */
 public class MotorExplorador {
-    Container documento;
+    //Container documento;    
     TablaSimbolos ts;    
     public String tituloPestaña;
+    public Compilador compilador;
+    public ArrayList <Compilador> compiladores;
+    public Explorador explorador;
     
-    public MotorExplorador(Container documento, TablaSimbolos ts){        
-        this.documento = documento;
-        this.ts = ts;        
-        tituloPestaña = null;
+    public MotorExplorador(Explorador explorador){           
+        this.explorador = explorador;
+        compiladores = new ArrayList<>();
     }
     
-    public void iniciar(){
-        tituloPestaña = null;
-        if (ts != null){
+    public void cambiarCompilador(int indxTab){ 
+        System.out.println(indxTab);
+        if ( indxTab == -1){
+            this.compilador = null;
+            this.ts = null;
+        }
+        else if ( indxTab < compiladores.size()){
+            Compilador compiNuevo = compiladores.get(indxTab);
+            if (compiNuevo != null){
+                compilador = compiNuevo;
+                ts = compiNuevo.tablaSimbolos;
+            }
+        }else{
+            Compilador compiNuevo = new Compilador();
+            compiladores.add(compiNuevo);
+            
+            this.compilador = compiNuevo;
+            this.ts = compiNuevo.tablaSimbolos;            
+        }
+        System.out.println(compilador);
+    }
+    
+    public void eliminarCompilador(int indxTab){
+        if ( indxTab < compiladores.size() && indxTab > -1)
+            compiladores.remove(indxTab);
+    }
+    
+    public TabNavegador getTab(String rutaArchivoCHTML, int indxTab, Navegacion navegacion){  
+        Compilador compiNuevo = new Compilador();
+        this.compilador = compiNuevo;
+        this.ts = compiNuevo.tablaSimbolos;
+        if (indxTab == -1){
+            compiladores.add(compiNuevo);
+        }else{
+            if ( indxTab < compiladores.size()){
+                compiladores.set(indxTab, compiNuevo);
+            }
+        }
+        
+        JPanel contenedor = new JPanel(null);
+        TabNavegador tab = new TabNavegador("", contenedor);
+        
+        contenedor.setBackground(Color.WHITE);         
+        File file = new File(rutaArchivoCHTML);
+        String nombreArchivo = file.getName();
+        
+        if (compilador.compilar(rutaArchivoCHTML)){
             Simbolo sCHTML = ts.getComponenteByID("chtml");
             if (sCHTML != null){
                 NodoAST nodoCHTML = ts.getComponenteByID("chtml").nodo;
-                agregarComponentes(documento, nodoCHTML);        
+                agregarComponentes(contenedor, nodoCHTML, new Estilo());
+                String titulo = this.tituloPestaña;
+                if (titulo == null)
+                    titulo = nombreArchivo;
+                
+                tab.titulo = titulo;
             }else{
                 JLabel l404 = getImageLabel(new File("src/images/404.jpg").getAbsolutePath(), null, null);
                 if (l404 != null)
-                    documento.add(l404);
-                tituloPestaña = "No encontrado";
+                    contenedor.add(l404);
+                
+                tab.titulo = "No se hallo el tag CHTML";
             }
+        }else{
+            contenedor.setPreferredSize(new Dimension(explorador.getDocumentWidth(), 600));            
+            JLabel l404 = getImageLabel(new File("src/images/404.jpg").getAbsolutePath(), null, null);
+            
+            if (l404 != null){
+                l404.setSize(new Dimension(explorador.getDocumentWidth(), 500));
+                l404.setPreferredSize(new Dimension(explorador.getDocumentWidth(), 500));
+                l404.setBorder(new EtchedBorder(EtchedBorder.RAISED));                
+                l404.setHorizontalAlignment(JLabel.CENTER);                
+                contenedor.add(l404);
+            }
+            
+            tab.titulo = "Archivo no encontrado";
         }
+        compilador.mostrarTablaSimbolosConsola();
+        compilador.mostrarErroresConsola();   
+        //contenedor.setPreferredSize(new Dimension(20000, 20000));
+        //System.out.println(contenedor.getSize().toString());
+        
+        return tab;
     }
-    
+    /*
+
     private void agregarComponentes(Container container, NodoAST nodo){
         if (nodo == null)
             return;
@@ -63,6 +141,9 @@ public class MotorExplorador {
         for (NodoAST n: nodo.hijos){
             Component nuevoComponent = getComponent(n);
             if (nuevoComponent != null){
+                //aplicar estilos ccss
+                aplicarEstilos(n, nuevoComponent);
+                
                 container.add(nuevoComponent);
                 nuevoComponent.setLocation(x, y);                
                 if (n.tipo != TipoNodo.celda && n.tipo != TipoNodo.celdaEnc){ //
@@ -87,6 +168,45 @@ public class MotorExplorador {
         if (widthContainer > container.getPreferredSize().width)
             container.setPreferredSize(new Dimension(widthContainer, container.getPreferredSize().height));
     }
+    */
+    private void agregarComponentes(Container container, NodoAST nodo, Estilo estiloHeredado){
+        if (nodo == null)
+            return;
+        int x=0, y=0;
+        int widthContainer = 0, heightContainer = 0;
+        for (NodoAST n: nodo.hijos){
+            Component nuevoComponent = getComponent(n);
+            if (nuevoComponent != null){
+                //estilo definido para el componente
+                Estilo estiloNodo = getEstilo(n);
+                Estilo estiloAplicar = estiloNodo.mezclar(estiloHeredado);
+                
+                aplicarEstilos(n, nuevoComponent, estiloAplicar);
+                
+                container.add(nuevoComponent);
+                nuevoComponent.setLocation(x, y);                
+                if (n.tipo != TipoNodo.celda && n.tipo != TipoNodo.celdaEnc){ //
+                    y += nuevoComponent.getPreferredSize().height;
+                    heightContainer += y;
+                }else
+                    x += nuevoComponent.getPreferredSize().width;
+                
+                int anchoNuevoComponente = nuevoComponent.getPreferredSize().width;
+                if (anchoNuevoComponente > widthContainer)
+                    widthContainer = anchoNuevoComponente;
+                
+                if (nuevoComponent instanceof Container){
+                    agregarComponentes((Container)nuevoComponent, n, estiloAplicar);                
+                    continue;
+                }
+            }
+            agregarComponentes(container, n, estiloHeredado);
+        }
+        if (heightContainer > container.getPreferredSize().height)
+            container.setPreferredSize(new Dimension(container.getPreferredSize().width, heightContainer));
+        if (widthContainer > container.getPreferredSize().width)
+            container.setPreferredSize(new Dimension(widthContainer, container.getPreferredSize().height));
+    }
     
     private Component getComponent(NodoAST nodo){
         if (nodo.omitir)
@@ -98,7 +218,7 @@ public class MotorExplorador {
                 JPanel panel = new JPanel(null);                
                 panel.setSize(getDimension(nodo));
                 panel.setPreferredSize(getDimension(nodo));
-                panel.setBackground(getBackgroud(nodo));                
+                //panel.setBackground(getBackgroud(nodo));                
                 return panel;
             
             case titulo:
@@ -148,8 +268,8 @@ public class MotorExplorador {
                     lEnlace.addMouseListener(new MouseAdapter() {
         
                         @Override
-                        public void mouseClicked(MouseEvent arg0) {
-                             System.out.println("Diste clic en el enlace");
+                        public void mouseClicked(MouseEvent arg0) {                             
+                             explorador.requestTab((String)rutaEnlace, Navegacion.CARGAR);
                         }
                     });
                     return lEnlace;
@@ -166,7 +286,9 @@ public class MotorExplorador {
                     boton.addActionListener(new java.awt.event.ActionListener() {
                         @Override
                         public void actionPerformed(java.awt.event.ActionEvent evt) {
-                            System.out.println("Diste clic en el botón");
+                            if (rutaBoton != null){
+                                explorador.requestTab((String)rutaBoton, Navegacion.CARGAR);
+                            }
                         }
                     });
                     return boton;
@@ -177,7 +299,7 @@ public class MotorExplorador {
                 JPanel panelTbl = new JPanel(null);                
                 panelTbl.setSize(getDimension(nodo, ComponentSize.MEDIUM, ComponentSize.MEDIUM));
                 panelTbl.setPreferredSize(getDimension(nodo, ComponentSize.MEDIUM, ComponentSize.MEDIUM));
-                panelTbl.setBackground(Color.BLACK);                
+                //panelTbl.setBackground(Color.BLACK);                
                 return panelTbl;                                
             
             case fila:
@@ -185,7 +307,7 @@ public class MotorExplorador {
                 Dimension dim = getDimension(nodo, ComponentSize.MEDIUM, ComponentSize.MEDIUM);
                 panelFila.setSize(dim);
                 panelFila.setPreferredSize(getDimension(nodo, ComponentSize.MEDIUM, ComponentSize.MEDIUM));
-                panelFila.setBackground(Color.BLUE);                
+                //panelFila.setBackground(Color.BLUE);                
                 return panelFila;                                
             
             case celda: 
@@ -193,14 +315,14 @@ public class MotorExplorador {
                 JPanel panelCelda = new JPanel(null);                
                 panelCelda.setSize(getDimension(nodo, ComponentSize.SMALL, ComponentSize.SMALL));
                 panelCelda.setPreferredSize(getDimension(nodo, ComponentSize.SMALL, ComponentSize.SMALL));
-                panelCelda.setBackground(Color.RED);   
+                //panelCelda.setBackground(Color.RED);   
                                                   
                 String textoPlanoCelda = getValorAtributo(nodo, TipoNodo.textoPlano, true);
                 if (textoPlanoCelda != null){
                     JLabel lTextoPlano = new JLabel(textoPlanoCelda);
                     lTextoPlano.setPreferredSize(getDimension(nodo));
                     lTextoPlano.setSize(getDimension(nodo));                           
-                    lTextoPlano.setBackground(Color.red);
+                    //lTextoPlano.setBackground(Color.red);
                     panelCelda.add(lTextoPlano);
                 }
                 return panelCelda;                
@@ -225,6 +347,15 @@ public class MotorExplorador {
         return null;
     }
     
+    /**
+     * Examina los atributos de un tag chtml 
+     * por el id y el grupo ccss del nodo si los tuviera     
+     * @param nodo que tenga como hijo el nodo de tipo atribs
+     * @param tipo de nodo correpondiente al atributo que desea obtenerse
+     * @param buscarEnContenido buscar el tipo especificado en el contenido de los tags chtml de apertura y cierre
+     * @param clase clase a la que se debe castear el valor del atributo si se halla
+     * @return el Objeto de casteado a la clase especificada que cooresponde al valor del atributo con el tipo especificado
+    */
     private Object getValorAtributo(NodoAST nodo, TipoNodo tipo, boolean buscarEnContenido, Class clase){
         String valStr = getValorAtributo(nodo, tipo, buscarEnContenido);
         try{
@@ -242,6 +373,14 @@ public class MotorExplorador {
         return null;
     }
     
+    /**
+     * Examina los atributos de un tag chtml 
+     * por el id y el grupo ccss del nodo si los tuviera     
+     * @param nodo que tenga como hijo el nodo de tipo atribs
+     * @param tipo de nodo correpondiente al atributo que desea obtenerse
+     * @param buscarEnContenido buscar el tipo especificado en el contenido de los tags chtml de apertura y cierre
+     * @return el String que cooresponde al valor del atributo con el tipo especificado
+    */
     private String getValorAtributo(NodoAST nodo, TipoNodo tipo, boolean buscarEnContenido){
         NodoAST atribs = nodo.getHijo(TipoNodo.atribs);
         if (atribs != null){
@@ -322,23 +461,173 @@ public class MotorExplorador {
         BIG, MEDIUM, SMALL
     }
     
-    
-    private Color getBackgroud(NodoAST nodo){
-        Color color = Color.WHITE;
-        NodoAST atribs = nodo.getHijo(TipoNodo.atribs);
-        if (atribs != null){
-            NodoAST nodoFondo = atribs.getHijo(TipoNodo.fondo);
-            if (nodoFondo != null){
-                String valStr = nodoFondo.getHijo(TipoNodo.cadenaValor).lexema;
-                try{
-                    java.lang.reflect.Field field = Color.class.getField(valStr);
-                    color = (Color)field.get(null);
-                }catch(Exception ex){}
+    /*
+    private Color getBackgroud(NodoAST nodo){           
+        try{
+            Color colorVal = getColor((String)getValorAtributo(nodo, TipoNodo.fondo, false, String.class));
+            return colorVal != null ? colorVal : Color.WHITE;
+        }catch(Exception ex){
+            return Color.WHITE;
+        }        
+    }
+    */
+    private void aplicarEstilos(NodoAST nodo, Component componente, Estilo estilo){
+        Color colorFondo = estilo.getColorFondo();
+        Font fuente = estilo.getFuente();
+        //fuente.
+        switch (nodo.tipo){
+            case panel:
+                if (colorFondo != null){
+                    componente.setBackground(colorFondo);
+                }
+                break;
+            case enlace:
+            case texto:
+                if (fuente != null){
+                    //componente.setFont(fuente); 
+                    componente.setFont(fuente);
+                }
+                break;
+        }
+    }
+    /*
+    private void aplicarEstilos(NodoAST nodo, Component componente){
+        Object id = getValorAtributo(nodo, TipoNodo.id, false, String.class);
+        Object grupo = getValorAtributo(nodo, TipoNodo.grupo, false, String.class);
+        ArrayList<Simbolo> estilos = new ArrayList<>();
+        
+        if (grupo != null){
+            ArrayList<Simbolo> sims = ts.getEstilosByGrupo((String)grupo);
+            estilos.addAll(sims);
+        }
+        
+        if (id != null){
+            estilos.addAll(ts.getEstilosByID((String)id));
+        }
+        
+        ArrayList <TipoNodo> estilosAplicables = nodo.getEstilosAplicables();        
+        for (Simbolo estilo : estilos){
+            NodoAST nodoRela = estilo.nodo;
+            for (NodoAST item : nodoRela.hijos){
+                if (estilosAplicables.contains(item.tipo)){
+                    //si el estilo es aplicable al componente
+                    switch(item.tipo){
+                        case fondoElemento:
+                            Color colorFondo = getColor(getValorItemCCSS(item));                            
+                            if (colorFondo != null){
+                                componente.setBackground(colorFondo);
+                            }
+                            break;
+                            
+                        case alineado:
+                            break;
+                    }
+                }
             }
         }
-        return color;
+    }
+
+    public String getValorItemCCSS(NodoAST item){
+        String strValor = null;
+        if (item != null){
+            NodoAST nodoCad = item.getHijo(TipoNodo.cadenaLit);
+            if (nodoCad == null)
+                nodoCad = item.getHijo(TipoNodo.cadenaLit2);
+            
+            if (nodoCad != null){
+                strValor = nodoCad.lexema;
+            }
+        }
+        return strValor;
+    }
+*/    
+    /**
+     * Examina los atributos de un tab chtml y examina los estilos determinados
+     * por el id y el grupo ccss del nodo si los tuviera
+     * Unifica toda esta información en un sólo Estilo
+     * @param nodo correpondiente al tag chtml
+     * @return un Estilo unificadod
+    */
+    public Estilo getEstilo(NodoAST nodo){
+        Estilo estilo = new Estilo();
+        //fondo
+        estilo.fondo = (String)getValorAtributo(nodo, TipoNodo.fondo, false, String.class);
+        //alto
+        Object alto = getValorAtributo(nodo, TipoNodo.alto, false, Double.class);
+        if (alto != null)
+            estilo.alto = (int)Math.ceil((double)alto);
+        //ancho
+        Object ancho = getValorAtributo(nodo, TipoNodo.ancho, false, Double.class);
+        if (ancho != null)
+            estilo.ancho = (int)Math.ceil((double)ancho);
+        //id
+        String id = (String)getValorAtributo(nodo, TipoNodo.id, false, String.class);
+        //grupo
+        String grupo = (String)getValorAtributo(nodo, TipoNodo.grupo, false, String.class);
+        
+        ArrayList<Simbolo> estilos = new ArrayList<>();
+        
+        if (grupo != null){
+            ArrayList<Simbolo> sims = ts.getEstilosByGrupo((String)grupo);
+            estilos.addAll(sims);
+        }
+        
+        if (id != null){
+            estilos.addAll(ts.getEstilosByID((String)id));
+        }
+                
+        for (Simbolo sEstilo : estilos){
+            NodoAST nodoRegla = sEstilo.nodo;
+            for (NodoAST item : nodoRegla.hijos){
+                switch(item.tipo){
+                    case fondoElemento:                     
+                        estilo.fondo = (String)evaluarCCSS(item);
+                        break;   
+                    case fuente:                    
+                        estilo.fuente = (String)evaluarCCSS(item);
+                        break;
+                    case texto: 
+                    case alineado:
+                    case formato:                    
+                    case tamTex:
+                    case visible:
+                    case borde:
+                    case opaque:
+                    case colorTex:
+                    case autoredimension:
+                        
+                        break;
+                }
+            }
+        }
+        return estilo;
     }
     
     
-    
+    public Object evaluarCCSS(NodoAST nodo){
+        if (nodo == null)
+            return null;
+        
+        switch (nodo.tipo){
+            case fondoElemento:
+                return evaluarCCSS(nodo.getHijo(0));
+            case texto: 
+            case alineado:
+            case formato:
+            case fuente:                    
+                return evaluarCCSS(nodo.getHijo(0));
+            case tamTex:
+            case visible:
+            case borde:
+            case opaque:
+            case colorTex:
+            case autoredimension:
+            case cadenaLit:
+            case cadenaLit2:
+                return nodo.lexema;
+        }
+        return null;
+    }
 }
+
+

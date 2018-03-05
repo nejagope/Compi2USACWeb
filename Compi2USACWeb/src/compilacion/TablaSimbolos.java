@@ -45,6 +45,28 @@ public class TablaSimbolos extends ArrayList <Simbolo>{
         return null;        
     }
     
+    public ArrayList<Simbolo> getEstilosByID(String id){  
+        ArrayList<Simbolo> estilos = new ArrayList<>();
+        for (Simbolo sim : this){
+            try{
+                if (sim.id.equals(id) && sim.tipo == TipoSimbolo.estilo)
+                    estilos.add(sim);
+            }catch(Exception ex){}
+        }
+        return estilos;        
+    }
+    
+    public ArrayList<Simbolo> getEstilosByGrupo(String grupo){  
+        ArrayList<Simbolo> estilos = new ArrayList<>();
+        for (Simbolo sim : this){
+            try{
+                if (sim.grupo.equals(grupo) && sim.tipo == TipoSimbolo.estilo)
+                    estilos.add(sim);
+            }catch(Exception ex){}
+        }
+        return estilos;        
+    }
+    
     public boolean agregarFuncion(Simbolo s){
         if (getFuncion(s.id, s.parametros.size()) == null){
             this.add(s);

@@ -5,12 +5,11 @@
  */
 package compi2usacweb;
 
-import compilacion.Compilador;
 import compilacion.MotorExplorador;
-import java.awt.Color;
-import java.io.File;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 /**
  *
@@ -20,12 +19,24 @@ public class Explorador extends javax.swing.JFrame {
     
     public String archivoPorDefecto = Env.PAGINA_POR_DEFECTO;
     public MotorExplorador motor;
+    public int WIDTH_EXPLORER;
     /**
      * Creates new form Explorador
      */
     public Explorador() {        
         initComponents();
         this.txtUrl.setText(archivoPorDefecto);
+        this.motor = new MotorExplorador(this);
+        
+        WIDTH_EXPLORER = this.tabsContainer.getWidth();   
+        
+         ChangeListener changeListener = (ChangeEvent changeEvent) -> {
+             javax.swing.JTabbedPane sourceTabbedPane = (javax.swing.JTabbedPane) changeEvent.getSource();
+             int index = sourceTabbedPane.getSelectedIndex();
+             //System.out.println("Tab changed to: " + sourceTabbedPane.getTitleAt(index));
+             motor.cambiarCompilador(index);
+        };
+        tabsContainer.addChangeListener(changeListener);
     }
 
     /**
@@ -43,6 +54,8 @@ public class Explorador extends javax.swing.JFrame {
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         menuItemRefresh = new javax.swing.JMenuItem();
+        menuItemNewTab = new javax.swing.JMenuItem();
+        menuItemCloseTab = new javax.swing.JMenuItem();
         jMenu2 = new javax.swing.JMenu();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
@@ -70,6 +83,12 @@ public class Explorador extends javax.swing.JFrame {
             }
         });
 
+        tabsContainer.addComponentListener(new java.awt.event.ComponentAdapter() {
+            public void componentResized(java.awt.event.ComponentEvent evt) {
+                tabsContainerComponentResized(evt);
+            }
+        });
+
         jMenu1.setText("File");
 
         menuItemRefresh.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F5, 0));
@@ -81,6 +100,24 @@ public class Explorador extends javax.swing.JFrame {
             }
         });
         jMenu1.add(menuItemRefresh);
+
+        menuItemNewTab.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_T, java.awt.event.InputEvent.CTRL_MASK));
+        menuItemNewTab.setText("Nueva Pestaña");
+        menuItemNewTab.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                menuItemNewTabActionPerformed(evt);
+            }
+        });
+        jMenu1.add(menuItemNewTab);
+
+        menuItemCloseTab.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_W, java.awt.event.InputEvent.CTRL_MASK));
+        menuItemCloseTab.setText("Cerrar Pestaña");
+        menuItemCloseTab.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                menuItemCloseTabActionPerformed(evt);
+            }
+        });
+        jMenu1.add(menuItemCloseTab);
 
         jMenuBar1.add(jMenu1);
 
@@ -130,53 +167,61 @@ public class Explorador extends javax.swing.JFrame {
         refrescar();
     }//GEN-LAST:event_menuItemRefreshActionPerformed
 
-    private void refrescar(){
+    private void tabsContainerComponentResized(java.awt.event.ComponentEvent evt) {//GEN-FIRST:event_tabsContainerComponentResized
+                
+    }//GEN-LAST:event_tabsContainerComponentResized
 
-        String rutaArchivo = txtUrl.getText();
-        File file = new File(rutaArchivo);
-        String nombreArchivo = file.getName();
-        
-        Compilador c = new Compilador();
-        c.compilar(rutaArchivo);
-        c.mostrarTablaSimbolosConsola();
-        c.mostrarErroresConsola();   
-        
-        JPanel contenedor = new JPanel(null);
-        //contenedor.setPreferredSize(new Dimension(20000, 20000));
-        System.out.println(contenedor.getSize().toString());
-        contenedor.setBackground(Color.WHITE);
-        motor = new MotorExplorador(contenedor, c.tablaSimbolos);
-        motor.iniciar();        
-        
-        String tabTitle = nombreArchivo;
-        if (motor.tituloPestaña != null);
-            tabTitle = motor.tituloPestaña;
-        JScrollPane tab = new JScrollPane(contenedor ,JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);        
-        
-        boolean addNewTab = true;
-        int cantTabs = tabsContainer.getTabCount();
-        int indiceTab = cantTabs;
-        for (int i= 0; i< cantTabs; i++){
-            if (tabTitle.equals(tabsContainer.getTitleAt(i))){                
-                addNewTab = false;
-                indiceTab = i;
-            }
-        }        
-        if (addNewTab)
-            tabsContainer.addTab(tabTitle, tab);
-        else{
-            tabsContainer.remove(indiceTab);
-            tabsContainer.insertTab(tabTitle, null, tab, rutaArchivo, indiceTab);
-        }
-        
-        
-        
+    private void menuItemNewTabActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuItemNewTabActionPerformed
+        agregarNuevaPestaña();
+    }//GEN-LAST:event_menuItemNewTabActionPerformed
+
+    private void menuItemCloseTabActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuItemCloseTabActionPerformed
+        closeSelectedTab();
+    }//GEN-LAST:event_menuItemCloseTabActionPerformed
+
+    public int getDocumentWidth(){
+        return this.tabsContainer.getWidth();
     }
     
-    private void compilar(){
-        motor.iniciar();
-        pack();
-        repaint();
+    private void refrescar(){        
+        requestTab(txtUrl.getText(), Navegacion.CARGAR);        
+    }
+    
+    public void requestTab(String rutaArchivo, Navegacion navegacion){
+        loadTab(motor.getTab(rutaArchivo, this.tabsContainer.getSelectedIndex(), navegacion));        
+    }
+    
+    public void closeSelectedTab(){
+        int selTab = tabsContainer.getSelectedIndex();
+        if (selTab > -1){
+            motor.eliminarCompilador(selTab);
+            tabsContainer.remove(selTab);
+        }
+    }
+    
+    public boolean loadTab(TabNavegador tab){
+        try{
+            JScrollPane scroll = new JScrollPane(tab.contenido 
+                ,JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
+                ,JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+            
+            int indxTabSel = this.tabsContainer.getSelectedIndex();
+            if (indxTabSel == -1){
+                tabsContainer.addTab(tab.titulo, tab.contenido);
+            }else{
+                tabsContainer.remove(indxTabSel);
+                tabsContainer.insertTab(tab.titulo, null, scroll, "", indxTabSel);
+                this.tabsContainer.setSelectedIndex(indxTabSel);
+            }
+            return true;
+        }catch(Exception ex){
+            return false;
+        }        
+    }
+    
+    private void agregarNuevaPestaña() {
+        this.tabsContainer.addTab("Nuevo", new JPanel());
+        this.tabsContainer.setSelectedIndex(tabsContainer.getTabCount()-1);        
     }
     /**
      * @param args the command line arguments
@@ -218,6 +263,8 @@ public class Explorador extends javax.swing.JFrame {
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
     private javax.swing.JMenuBar jMenuBar1;
+    private javax.swing.JMenuItem menuItemCloseTab;
+    private javax.swing.JMenuItem menuItemNewTab;
     private javax.swing.JMenuItem menuItemRefresh;
     private javax.swing.JTabbedPane tabsContainer;
     private javax.swing.JTextField txtUrl;

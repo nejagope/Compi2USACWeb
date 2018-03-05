@@ -40,17 +40,6 @@ public class Simbolo {
     public ArrayList<Simbolo> parametros;
     public NodoAST bloqueSentencias;
     
-    //css
-    public String texto;
-    public String formato;
-    public String fuente;
-    public String tamTex;
-    public boolean visible;
-    public String borde;
-    public String opaque;
-    public String colorTex;
-    public String autoRedimension;
-    
     public Simbolo(){
         
     }

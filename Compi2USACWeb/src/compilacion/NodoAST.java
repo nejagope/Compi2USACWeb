@@ -33,7 +33,9 @@ public class NodoAST {
                 "     </table>";
         
         //return cad;
-        return tipo.toString() + "\n" + (lexema==null?"":lexema)+ "\n" + (valor==null?"":(valor.getClass().getName())) + "\n" + "Omitir: " + omitir  + "\n" + "id: " + id;        
+        cad = tipo.toString() + "\n" + (lexema==null?"":lexema)+ "\n" + (valor==null?"":(valor.getClass().getName())) + "\n" + "Omitir: " + omitir  + "\n" + "id: " + id;        
+        cad = cad.replace("\"", "\\\"");
+        return cad;
     }
     
     public NodoAST(TipoNodo tipo, String lexema, int linea, int columna, String archivoFuente){
@@ -143,4 +145,104 @@ public class NodoAST {
             return hijos.size();
         return 0;
     }
+    
+    public ArrayList<TipoNodo> getEstilosAplicables(){
+        ArrayList<TipoNodo> estilos = new ArrayList<>();
+        switch(tipo){
+            case chtml:
+            case encabezado:
+            case cuerpo:
+            case cjs:
+            case ccss:
+            case titulo:
+            case salto:
+                //ningún estilo aplicable
+                break;
+            case panel:
+                estilos.add(TipoNodo.alineado);
+                estilos.add(TipoNodo.fondoElemento);
+                
+                estilos.add(TipoNodo.borde);
+                estilos.add(TipoNodo.opaque);
+                
+                estilos.add(TipoNodo.autoredimension);
+                break;
+                
+            case texto:   
+            case boton:
+            case enlace:
+            case tabla:
+            case areaTexto:
+            case cajaTexto:
+            case cajaOpciones:
+                estilos.add(TipoNodo.alineado);
+                estilos.add(TipoNodo.texto);
+                estilos.add(TipoNodo.formato);
+                estilos.add(TipoNodo.fuente);
+                estilos.add(TipoNodo.tamTex);
+                estilos.add(TipoNodo.fondoElemento);
+                
+                estilos.add(TipoNodo.visible);
+                estilos.add(TipoNodo.borde);
+                estilos.add(TipoNodo.opaque);
+                estilos.add(TipoNodo.colorTex);                
+                
+                estilos.add(TipoNodo.autoredimension);
+                break;
+            
+            case imagen:
+                estilos.add(TipoNodo.alineado);    
+                
+                estilos.add(TipoNodo.visible); 
+                
+                estilos.add(TipoNodo.autoredimension);
+                break;
+                        
+                
+            case fila:                
+                estilos.add(TipoNodo.texto);                
+                estilos.add(TipoNodo.fuente);
+                estilos.add(TipoNodo.tamTex);
+                estilos.add(TipoNodo.fondoElemento);
+                
+                estilos.add(TipoNodo.autoredimension);
+                break;
+                    
+            case celda:                
+                estilos.add(TipoNodo.texto);
+            case celdaEnc:
+                estilos.add(TipoNodo.formato);
+                estilos.add(TipoNodo.fuente);
+                estilos.add(TipoNodo.tamTex);
+                estilos.add(TipoNodo.fondoElemento);
+                
+                estilos.add(TipoNodo.colorTex);
+                
+                estilos.add(TipoNodo.autoredimension);
+                break;   
+            
+            case opcion:
+                estilos.add(TipoNodo.alineado);
+                estilos.add(TipoNodo.texto);
+                estilos.add(TipoNodo.formato);
+                estilos.add(TipoNodo.fuente);                
+                estilos.add(TipoNodo.fondoElemento);
+                                
+                estilos.add(TipoNodo.opaque);    
+                
+                estilos.add(TipoNodo.autoredimension);
+                break;
+            
+            case spinner:
+                estilos.add(TipoNodo.alineado);
+                
+                estilos.add(TipoNodo.visible);                
+                estilos.add(TipoNodo.opaque);    
+                
+                estilos.add(TipoNodo.autoredimension);                
+                break;
+        }        
+        return estilos;
+    }
+    
 }

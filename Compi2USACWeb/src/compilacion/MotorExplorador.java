@@ -89,7 +89,8 @@ public class MotorExplorador {
         JPanel contenedor = new JPanel(null);
         TabNavegador tab = new TabNavegador("", contenedor);
         
-        contenedor.setBackground(Color.WHITE);         
+        contenedor.setBackground(Color.WHITE);  
+        contenedor.setPreferredSize(new Dimension(explorador.getDocumentWidth(), 600)); 
         File file = new File(rutaArchivoCHTML);
         String nombreArchivo = file.getName();
         
@@ -174,7 +175,10 @@ public class MotorExplorador {
             return;
         int x=0, y=0;
         int widthContainer = 0, heightContainer = 0;
+        
+        int indxNodo = -1;
         for (NodoAST n: nodo.hijos){
+            indxNodo ++;
             Component nuevoComponent = getComponent(n);
             if (nuevoComponent != null){
                 //estilo definido para el componente
@@ -185,15 +189,19 @@ public class MotorExplorador {
                 
                 container.add(nuevoComponent);
                 nuevoComponent.setLocation(x, y);                
-                if (n.tipo != TipoNodo.celda && n.tipo != TipoNodo.celdaEnc){ //
+                
+                if (n.tipo == TipoNodo.celda || n.tipo == TipoNodo.celdaEnc){
+                    if (nodo.cantidadHijos()-1 == indxNodo){                        
+                        heightContainer += nuevoComponent.getPreferredSize().height;
+                    }
+                    widthContainer += nuevoComponent.getPreferredSize().width;
+                    x += nuevoComponent.getPreferredSize().width;
+                }else{
                     y += nuevoComponent.getPreferredSize().height;
                     heightContainer += y;
-                }else
-                    x += nuevoComponent.getPreferredSize().width;
-                
-                int anchoNuevoComponente = nuevoComponent.getPreferredSize().width;
-                if (anchoNuevoComponente > widthContainer)
-                    widthContainer = anchoNuevoComponente;
+                    if (nuevoComponent.getPreferredSize().width > widthContainer)
+                        widthContainer =nuevoComponent.getPreferredSize().width;
+                }
                 
                 if (nuevoComponent instanceof Container){
                     agregarComponentes((Container)nuevoComponent, n, estiloAplicar);                
@@ -202,10 +210,46 @@ public class MotorExplorador {
             }
             agregarComponentes(container, n, estiloHeredado);
         }
+        
+        //container.setPreferredSize(new Dimension(widthContainer, heightContainer));
+        
         if (heightContainer > container.getPreferredSize().height)
             container.setPreferredSize(new Dimension(container.getPreferredSize().width, heightContainer));
-        if (widthContainer > container.getPreferredSize().width)
+        if (widthContainer >= container.getPreferredSize().width){
             container.setPreferredSize(new Dimension(widthContainer, container.getPreferredSize().height));
+        }
+        if (widthContainer > 0){
+        //alineación            
+            if (nodo.tipo != TipoNodo.celda && nodo.tipo != TipoNodo.fila && nodo.tipo != TipoNodo.celdaEnc && nodo.tipo != TipoNodo.chtml){
+                //hay oportunidad para alinear 
+                int anchoContenedor = container.getPreferredSize().width;            
+
+                if (estiloHeredado.alineado != null){
+                    switch(estiloHeredado.alineado){
+                        case "derecha":
+                            for (Component comp : container.getComponents()){
+                                int dif = anchoContenedor - comp.getWidth();
+                                comp.setLocation(dif, comp.getLocation().y);                            
+                            }     
+                            break;
+                        case "centrado":                        
+                            for (Component comp : container.getComponents()){
+                                int dif = anchoContenedor - comp.getWidth();
+                                comp.setLocation((int)dif/2, comp.getLocation().y);                            
+                            }
+                            break;
+                        case "justificado":
+                            for (Component comp : container.getComponents()){                            
+                                comp.setLocation(0, 0);                            
+                                comp.setPreferredSize(new Dimension(anchoContenedor ,comp.getHeight()));
+                                comp.setSize(new Dimension(anchoContenedor ,comp.getHeight()));
+                            }
+                            break;
+                    }
+                }
+            }
+        }
+        
     }
     
     private Component getComponent(NodoAST nodo){
@@ -217,8 +261,7 @@ public class MotorExplorador {
             case panel:
                 JPanel panel = new JPanel(null);                
                 panel.setSize(getDimension(nodo));
-                panel.setPreferredSize(getDimension(nodo));
-                //panel.setBackground(getBackgroud(nodo));                
+                panel.setPreferredSize(getDimension(nodo));                
                 return panel;
             
             case titulo:
@@ -236,6 +279,7 @@ public class MotorExplorador {
                         ta.setEditable(false);
                         ta.setSize(getDimension(nodo));
                         ta.setPreferredSize(getDimension(nodo));
+                        ta.setWrapStyleWord(true);
                         return ta;
                     }
                     break;
@@ -340,6 +384,7 @@ public class MotorExplorador {
 
             ImageIcon icono = new ImageIcon(imagen);
             JLabel labelImg = new JLabel(icono);
+            labelImg.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
             labelImg.setPreferredSize(new Dimension(icono.getIconWidth(), icono.getIconHeight()));
             labelImg.setSize(labelImg.getPreferredSize());
             return labelImg;
@@ -397,8 +442,37 @@ public class MotorExplorador {
         return null;
     }
     
-    private Dimension getDimension(NodoAST nodo){        
-        return getDimension(nodo, ComponentSize.MEDIUM, ComponentSize.SMALL);
+    private Dimension getDimension(NodoAST nodo){    
+        int ancho = 0;
+        int alto = 0;
+        
+        
+        NodoAST atribs = nodo.getHijo(TipoNodo.atribs);
+        NodoAST nodoAlto= null, nodoAncho= null;
+        
+        if (atribs != null){
+            nodoAlto = atribs.getHijo(TipoNodo.alto);
+            if (nodoAlto != null){
+                String valStr = nodoAlto.getHijo(TipoNodo.cadenaValor).lexema;
+                try{
+                    alto = (int)(Double.parseDouble(valStr));
+                }catch(Exception ex){}
+            }
+            nodoAncho = atribs.getHijo(TipoNodo.ancho);
+            if (nodoAlto != null){
+                String valStr = nodoAncho.getHijo(TipoNodo.cadenaValor).lexema;
+                try{
+                    ancho = (int)(Double.parseDouble(valStr));
+                }catch(Exception ex){}
+            }
+        }
+        if (nodoAncho == null){
+            ancho = 200;
+        }
+        if (nodoAlto == null){
+            alto = 50;
+        }
+        return new Dimension(ancho, alto);
     }
     
     private Dimension getDimension(NodoAST nodo, ComponentSize sAncho, ComponentSize sAlto){        
@@ -473,74 +547,77 @@ public class MotorExplorador {
     */
     private void aplicarEstilos(NodoAST nodo, Component componente, Estilo estilo){
         Color colorFondo = estilo.getColorFondo();
+        Color colorTexto = estilo.getColorTexto();
         Font fuente = estilo.getFuente();
+        Boolean opaque = estilo.opaque;
+        Boolean visible = estilo.visible;
+        String formato = estilo.formato;
         //fuente.
         switch (nodo.tipo){
             case panel:
                 if (colorFondo != null){
                     componente.setBackground(colorFondo);
                 }
+                if (opaque != null){
+                    ((JPanel)componente).setOpaque(opaque);
+                }
+                if (visible != null)
+                    componente.setVisible(visible);
                 break;
             case enlace:
-            case texto:
-                if (fuente != null){
-                    //componente.setFont(fuente); 
+                if (opaque != null){
+                    ((JLabel)componente).setOpaque(opaque);
+                }
+                
+                if (fuente != null){                
                     componente.setFont(fuente);
+                }
+                if (colorFondo != null){                
+                    componente.setBackground(colorFondo);
+                }
+                if (colorTexto != null){                
+                    componente.setForeground(colorTexto);
+                }
+                if (opaque != null){
+                    ((JTextArea)componente).setOpaque(opaque);
+                } 
+                if (visible != null)
+                    componente.setVisible(visible);
+                if (formato != null){
+                    if (formato.contains("mayuscula"))
+                        ((JLabel)componente).setText(((JTextArea)componente).getText().toUpperCase());
+                    if (formato.contains("minuscula"))
+                        ((JLabel)componente).setText(((JLabel)componente).getText().toLowerCase());
+                }
+                break;
+            case texto:
+                if (fuente != null){                
+                    componente.setFont(fuente);
+                }
+                if (colorFondo != null){                
+                    componente.setBackground(colorFondo);
+                }
+                if (colorTexto != null){                
+                    componente.setForeground(colorTexto);
+                }
+                if (opaque != null){
+                    ((JTextArea)componente).setOpaque(opaque);
+                } 
+                if (visible != null)
+                    componente.setVisible(visible);
+                if (formato != null){
+                    String textoArea = ((JTextArea)componente).getText();
+                    if (formato.contains("mayuscula"))                        
+                        ((JTextArea)componente).setText(textoArea.toUpperCase());
+                    if (formato.contains("minuscula"))
+                        ((JTextArea)componente).setText(textoArea.toLowerCase());
+                    if (formato.contains("capital-t"))
+                        ((JTextArea)componente).setText(Estilo.getCapital(textoArea));
                 }
                 break;
         }
     }
-    /*
-    private void aplicarEstilos(NodoAST nodo, Component componente){
-        Object id = getValorAtributo(nodo, TipoNodo.id, false, String.class);
-        Object grupo = getValorAtributo(nodo, TipoNodo.grupo, false, String.class);
-        ArrayList<Simbolo> estilos = new ArrayList<>();
-        
-        if (grupo != null){
-            ArrayList<Simbolo> sims = ts.getEstilosByGrupo((String)grupo);
-            estilos.addAll(sims);
-        }
-        
-        if (id != null){
-            estilos.addAll(ts.getEstilosByID((String)id));
-        }
-        
-        ArrayList <TipoNodo> estilosAplicables = nodo.getEstilosAplicables();        
-        for (Simbolo estilo : estilos){
-            NodoAST nodoRela = estilo.nodo;
-            for (NodoAST item : nodoRela.hijos){
-                if (estilosAplicables.contains(item.tipo)){
-                    //si el estilo es aplicable al componente
-                    switch(item.tipo){
-                        case fondoElemento:
-                            Color colorFondo = getColor(getValorItemCCSS(item));                            
-                            if (colorFondo != null){
-                                componente.setBackground(colorFondo);
-                            }
-                            break;
-                            
-                        case alineado:
-                            break;
-                    }
-                }
-            }
-        }
-    }
-
-    public String getValorItemCCSS(NodoAST item){
-        String strValor = null;
-        if (item != null){
-            NodoAST nodoCad = item.getHijo(TipoNodo.cadenaLit);
-            if (nodoCad == null)
-                nodoCad = item.getHijo(TipoNodo.cadenaLit2);
-            
-            if (nodoCad != null){
-                strValor = nodoCad.lexema;
-            }
-        }
-        return strValor;
-    }
-*/    
+      
     /**
      * Examina los atributos de un tab chtml y examina los estilos determinados
      * por el id y el grupo ccss del nodo si los tuviera
@@ -560,6 +637,11 @@ public class MotorExplorador {
         Object ancho = getValorAtributo(nodo, TipoNodo.ancho, false, Double.class);
         if (ancho != null)
             estilo.ancho = (int)Math.ceil((double)ancho);
+        
+        Object alineado = getValorAtributo(nodo, TipoNodo.alineado, false, String.class);
+        if (alineado != null)
+            estilo.alineado = alineado.toString();
+        
         //id
         String id = (String)getValorAtributo(nodo, TipoNodo.id, false, String.class);
         //grupo
@@ -580,20 +662,34 @@ public class MotorExplorador {
             NodoAST nodoRegla = sEstilo.nodo;
             for (NodoAST item : nodoRegla.hijos){
                 switch(item.tipo){
-                    case fondoElemento:                     
+                    case colorTex:
+                        estilo.colorTex = (String)evaluarCCSS(item);
+                        break;   
+                    case fondoElemento:                          
                         estilo.fondo = (String)evaluarCCSS(item);
                         break;   
                     case fuente:                    
                         estilo.fuente = (String)evaluarCCSS(item);
-                        break;
-                    case texto: 
+                        break;                     
                     case alineado:
-                    case formato:                    
+                        estilo.alineado = (String)evaluarCCSS(item);   
+                        break;
                     case tamTex:
+                        estilo.tamTex = evaluarCCSS(item).toString();
+                        break;
                     case visible:
+                        estilo.visible = (Boolean)evaluarCCSS(item);
+                        break;
+                    case opaque:                    
+                        estilo.opaque = (Boolean)evaluarCCSS(item);
+                        break;
+                    case formato:
+                        estilo.formato = (String)evaluarCCSS(item);
+                        break;
+                    case texto:
+                    
                     case borde:
-                    case opaque:
-                    case colorTex:
+                    
                     case autoredimension:
                         
                         break;
@@ -613,18 +709,45 @@ public class MotorExplorador {
                 return evaluarCCSS(nodo.getHijo(0));
             case texto: 
             case alineado:
-            case formato:
+                return evaluarCCSS(nodo.getHijo(0));
+            case izquierda:
+                return "izquierda";
+            case derecha:
+                return "derecha";
+            case centrado:
+                return "centrado";
+            case justificado:
+                return "justificado";            
             case fuente:                    
                 return evaluarCCSS(nodo.getHijo(0));
             case tamTex:
-            case visible:
-            case borde:
-            case opaque:
+                return evaluarCCSS(nodo.getHijo(0));
             case colorTex:
-            case autoredimension:
+                return evaluarCCSS(nodo.getHijo(0));            
             case cadenaLit:
             case cadenaLit2:
                 return nodo.lexema;
+            case enteroLit:
+                return nodo.valor;
+            case dobleLit:
+                return nodo.valor;
+            case booleanoLit:
+                return nodo.valor;
+            case visible:
+            case opaque:
+                return evaluarCCSS(nodo.getHijo(0));
+            case formato:
+                String valForm = "";
+                for (NodoAST nodoForm : nodo.hijos){
+                    if (!valForm.isEmpty())
+                        valForm += "|";
+                    valForm += (nodoForm.lexema).toLowerCase();
+                }
+                return valForm;
+            case borde:
+            
+            
+            case autoredimension:
         }
         return null;
     }

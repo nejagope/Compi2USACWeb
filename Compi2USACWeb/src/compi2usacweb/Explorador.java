@@ -207,7 +207,7 @@ public class Explorador extends javax.swing.JFrame {
             
             int indxTabSel = this.tabsContainer.getSelectedIndex();
             if (indxTabSel == -1){
-                tabsContainer.addTab(tab.titulo, tab.contenido);
+                tabsContainer.addTab(tab.titulo, scroll);
             }else{
                 tabsContainer.remove(indxTabSel);
                 tabsContainer.insertTab(tab.titulo, null, scroll, "", indxTabSel);

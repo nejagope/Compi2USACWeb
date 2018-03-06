@@ -25,9 +25,10 @@ public class Estilo {
     public String formato;
     public String fuente;
     public String tamTex;
-    public boolean visible;
+    public Boolean visible;
+    public Boolean opaque;
     public String borde;
-    public String opaque;
+    
     public String colorTex;
     public String autoRedimension;
     
@@ -42,10 +43,10 @@ public class Estilo {
         e.fondo = this.fondo != null ? this.fondo : complementario.fondo;
         
         e.texto = this.texto != null ? this.texto : complementario.texto;
-        e.formato = this.formato != null ? this.formato : complementario.formato;
+        e.formato = this.formato != null ? this.formato + (complementario.formato != null ? "|" + complementario.formato: "") : complementario.formato;
         e.fuente = this.fuente != null ? this.fuente : complementario.fuente;
         e.tamTex = this.tamTex != null ? this.tamTex : complementario.tamTex;
-        //e.visible = this.visible != null ? this.visible : complementario.visible;
+        e.visible = this.visible != null ? this.visible : complementario.visible;
         e.borde = this.borde != null ? this.borde : complementario.borde;
         e.opaque = this.opaque != null ? this.opaque : complementario.opaque;
         e.colorTex = this.colorTex != null ? this.colorTex : complementario.colorTex;
@@ -59,6 +60,14 @@ public class Estilo {
     
     public Color getColorTexto(){
         return getColor(colorTex);
+    }
+    
+    public Integer getTamTex(){
+        try{
+            return (int)Math.round(Float.parseFloat(tamTex));
+        }catch(Exception ex){
+            return null;
+        }        
     }
     
     public Color getColor(String colorStr){  
@@ -110,6 +119,24 @@ public class Estilo {
         }catch(Exception ex){
             return  new Font("Tahoma", Font.PLAIN, 12);
         }
+    }
+    
+    public static String getCapital(String s){
+        String res = "";
+        boolean raise = true;
+        if (s != null){
+            for (int i = 0; i< s.length(); i++){
+                String sub = s.substring(i, i+1);
+                System.out.println(sub);
+                if (raise && !sub.toUpperCase().equals(sub)){
+                    res += sub.toUpperCase();
+                    raise = !sub.toUpperCase().equals(sub);                    
+                }else{
+                    res += sub;                    
+                }
+            }
+        }
+        return res;
     }
     
 }

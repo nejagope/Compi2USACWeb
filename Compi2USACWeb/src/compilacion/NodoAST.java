@@ -127,6 +127,14 @@ public class NodoAST {
         }
     }
     
+    public ArrayList<NodoAST> getHijos(TipoNodo tipo){
+        ArrayList<NodoAST> children = new ArrayList<>();
+        for(NodoAST hijo : this.hijos)
+            if (hijo.tipo == tipo)
+                children.add(hijo);
+        return children;
+    }
+    
     public NodoAST getHijo(TipoNodo tipo){
         for(NodoAST hijo : this.hijos)
             if (hijo.tipo == tipo)

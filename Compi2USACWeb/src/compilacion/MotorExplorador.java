@@ -25,9 +25,12 @@ import java.util.ArrayList;
 import java.util.Map;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSpinner;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.border.Border;
 
 
@@ -103,7 +106,7 @@ public class MotorExplorador {
                 if (nodoCHTML != null){
                     nodoBody = nodoCHTML.getHijo(TipoNodo.cuerpo);
                 }
-                agregarComponentes(contenedor, nodoCHTML, new Estilo());
+                agregarComponentes(contenedor, nodoBody, new Estilo());
                 String titulo = this.tituloPestaña;
                 if (titulo == null)
                     titulo = nombreArchivo;
@@ -139,7 +142,7 @@ public class MotorExplorador {
     }
 
     private void agregarComponentes(Container container, NodoAST nodo, Estilo estiloHeredado){
-        if (nodo == null || nodo.tipo == TipoNodo.titulo)
+        if (nodo == null || nodo.tipo == TipoNodo.titulo || nodo.tipo == TipoNodo.atribs)
             return;
         int x=0, y=0;
         int widthContainer = 0, heightContainer = 0;
@@ -156,7 +159,13 @@ public class MotorExplorador {
                 
                 aplicarEstilos(n, nuevoComponent, estiloAplicar);
                 
-                if (nuevoComponent instanceof Container && !(nuevoComponent instanceof JLabel) && !(nuevoComponent instanceof JTextArea)){
+                if (nuevoComponent instanceof Container 
+                        && !(nuevoComponent instanceof JLabel) 
+                        && !(nuevoComponent instanceof JTextArea)
+                        && !(nuevoComponent instanceof JTextField)
+                        && !(nuevoComponent instanceof JComboBox)
+                        && !(nuevoComponent instanceof JSpinner)
+                        ){
                     agregarComponentes((Container)nuevoComponent, n, estiloAplicar);                                    
                 }
                 
@@ -167,14 +176,17 @@ public class MotorExplorador {
                 
                 
                 if (n.tipo == TipoNodo.celda || n.tipo == TipoNodo.celdaEnc){
-                    if (nodo.cantidadHijos()-1 == indxNodo){                        
+                    if (nodo.getHijo(TipoNodo.atribs) == null && nodo.cantidadHijos()-1 == indxNodo
+                            || nodo.getHijo(TipoNodo.atribs) != null && nodo.cantidadHijos() == indxNodo){                    
                         heightContainer += nuevoComponent.getPreferredSize().height;
                     }
+                    
                     widthContainer += nuevoComponent.getPreferredSize().width;
                     x += nuevoComponent.getPreferredSize().width;
                 }else{
                     y += nuevoComponent.getPreferredSize().height;
-                    heightContainer += y;
+                    
+                    heightContainer = y;
                     if (nuevoComponent.getPreferredSize().width > widthContainer)
                         widthContainer =nuevoComponent.getPreferredSize().width;
                 }
@@ -184,48 +196,57 @@ public class MotorExplorador {
         }
         
         //container.setPreferredSize(new Dimension(widthContainer, heightContainer));
+        Dimension dimCont = getDimension(nodo);
+        if (nodo.tipo == TipoNodo.cuerpo)
+            dimCont.width = explorador.getWidth();
         
-        if (heightContainer > container.getPreferredSize().height){
+        if (heightContainer > dimCont.height){
             container.setPreferredSize(new Dimension(container.getPreferredSize().width, heightContainer));
             container.setSize(new Dimension(container.getPreferredSize().width, heightContainer));
+        }else{
+            container.setPreferredSize(new Dimension(container.getPreferredSize().width, dimCont.height));
+            container.setSize(new Dimension(container.getPreferredSize().width, dimCont.height));
         }
-        if (widthContainer >= container.getPreferredSize().width){
+        if (widthContainer > dimCont.width){
             container.setPreferredSize(new Dimension(widthContainer, container.getPreferredSize().height));
             container.setSize(new Dimension(widthContainer, container.getPreferredSize().height));
+        }else{
+            container.setPreferredSize(new Dimension(dimCont.width, container.getPreferredSize().height));
+            container.setSize(new Dimension(dimCont.width, container.getPreferredSize().height));
         }
-        if (widthContainer > 0){
+        
         //alineación            
-            if (nodo.tipo != TipoNodo.celda && nodo.tipo != TipoNodo.fila && nodo.tipo != TipoNodo.celdaEnc && nodo.tipo != TipoNodo.chtml){
-                //hay oportunidad para alinear 
-                int anchoContenedor = container.getPreferredSize().width;            
+        if (nodo.tipo != TipoNodo.celda && nodo.tipo != TipoNodo.fila && nodo.tipo != TipoNodo.celdaEnc && nodo.tipo != TipoNodo.chtml){
+            //hay oportunidad para alinear 
+            int anchoContenedor = container.getPreferredSize().width;            
 
-                if (estiloHeredado.alineado != null){
-                    switch(estiloHeredado.alineado){
-                        case "derecha":
-                            for (Component comp : container.getComponents()){
-                                int dif = anchoContenedor - comp.getWidth();
-                                comp.setLocation(dif, comp.getLocation().y);                                                                 
-                            }     
-                            break;
-                        case "centrado":                        
-                            for (Component comp : container.getComponents()){
-                                int dif = anchoContenedor - comp.getWidth();
-                                comp.setLocation((int)dif/2, comp.getLocation().y);                            
-                                
-                            }
-                            break;
-                        case "justificado":
-                            for (Component comp : container.getComponents()){                            
-                                comp.setLocation(0, 0);                            
-                                comp.setPreferredSize(new Dimension(anchoContenedor ,comp.getHeight()));
-                                comp.setSize(new Dimension(anchoContenedor ,comp.getHeight()));
-                                                                
-                            }
-                            break;
-                    }
+            if (estiloHeredado.alineado != null){
+                switch(estiloHeredado.alineado){
+                    case "derecha":
+                        for (Component comp : container.getComponents()){
+                            int dif = anchoContenedor - comp.getWidth();
+                            comp.setLocation(dif, comp.getLocation().y);                                                                 
+                        }     
+                        break;
+                    case "centrado":                        
+                        for (Component comp : container.getComponents()){
+                            int dif = anchoContenedor - comp.getWidth();
+                            comp.setLocation((int)dif/2, comp.getLocation().y);                            
+
+                        }
+                        break;
+                    case "justificado":
+                        for (Component comp : container.getComponents()){                            
+                            comp.setLocation(0, 0);                            
+                            comp.setPreferredSize(new Dimension(anchoContenedor ,comp.getHeight()));
+                            comp.setSize(new Dimension(anchoContenedor ,comp.getHeight()));
+
+                        }
+                        break;
                 }
             }
         }
+        
         
     }
     
@@ -250,10 +271,12 @@ public class MotorExplorador {
                 break;
             
             case texto:
+            case areaTexto:
                     NodoAST nodoTex = nodo.getHijo(TipoNodo.textoPlano);
                     if (nodoTex != null){
                         JTextArea ta = new JTextArea(nodoTex.lexema);
-                        ta.setEditable(false);
+                        if (nodo.tipo == TipoNodo.texto)
+                            ta.setEditable(false);
                         ta.setSize(getDimension(nodo));
                         ta.setPreferredSize(getDimension(nodo));
                         ta.setWrapStyleWord(true);
@@ -261,7 +284,15 @@ public class MotorExplorador {
                         return ta;
                     }
                     break;
-            
+            case cajaTexto:
+                NodoAST nodoTexCaja = nodo.getHijo(TipoNodo.textoPlano);
+                if (nodoTexCaja != null){ 
+                    JTextField tf = new JTextField(nodoTexCaja.lexema.replace("\n", " "));                    
+                    tf.setSize(getDimension(nodo));
+                    tf.setPreferredSize(getDimension(nodo));                    
+                    return tf;
+                }
+                break;
             case imagen:
                     String ruta = getValorAtributo(nodo, TipoNodo.ruta, true);
                     Object alto = getValorAtributo(nodo, TipoNodo.alto, false, Double.class);
@@ -301,7 +332,25 @@ public class MotorExplorador {
                     return lEnlace;
                 }
                 break;
-                
+            
+            case cajaOpciones:                
+                ArrayList<NodoAST> nodosOp = nodo.getHijos(TipoNodo.opcion);
+                String opsCombo[] = new String[nodosOp.size()];
+                int i = 0;
+                for (NodoAST nodoOp : nodosOp){
+                    NodoAST txtOpNodo = nodoOp.getHijo(TipoNodo.textoPlano);
+                    String txtOp = "";
+                    if (txtOpNodo != null){
+                        txtOp = txtOpNodo.lexema;
+                    }
+                    opsCombo[i] = txtOp;
+                    i++;
+                }
+                JComboBox combo = new JComboBox(opsCombo);
+                combo.setSize(getDimension(nodo));
+                combo.setPreferredSize(getDimension(nodo));
+                return combo;
+                                            
             case boton:
                 Object rutaBoton = getValorAtributo(nodo, TipoNodo.ruta, false, String.class);
                 Object textoBoton = getValorAtributo(nodo, TipoNodo.textoPlano, true, String.class);
@@ -349,7 +398,7 @@ public class MotorExplorador {
                     lTextoPlano.setSize(getDimension(nodo));                                                                                       
                 }
                 return lTextoPlano;
-                
+            
                                 
         }        
         return null;
@@ -450,7 +499,7 @@ public class MotorExplorador {
             ancho = 200;
         }
         if (nodoAlto == null){
-            alto = 50;
+            alto = 30;
         }
         return new Dimension(ancho, alto);
     }
@@ -475,6 +524,7 @@ public class MotorExplorador {
         String formato = estilo.formato;
         String alineado = estilo.alineado;
         Border borde = estilo.getBorde();
+        String textoEstilo = estilo.texto;
         //fuente.
         switch (nodo.tipo){
             case panel:
@@ -509,7 +559,7 @@ public class MotorExplorador {
                     componente.setForeground(colorTexto);
                 }
                 if (opaque != null){
-                    ((JTextArea)componente).setOpaque(opaque);
+                    ((JLabel)componente).setOpaque(opaque);
                 } 
                 if (visible != null)
                     componente.setVisible(visible);
@@ -532,8 +582,13 @@ public class MotorExplorador {
                 if (borde != null){
                     ((JLabel)componente).setBorder(borde);
                 }
+                
+                if (textoEstilo != null){
+                    ((JLabel)componente).setText(textoEstilo);
+                }
                 break;
             case texto:
+            case areaTexto:
                 if (fuente != null){                
                     componente.setFont(fuente);
                 }
@@ -545,7 +600,8 @@ public class MotorExplorador {
                 }
                 if (opaque != null){
                     ((JTextArea)componente).setOpaque(opaque);
-                } 
+                }
+                
                 if (visible != null)
                     componente.setVisible(visible);
                 if (formato != null){
@@ -560,6 +616,65 @@ public class MotorExplorador {
                 
                 if (borde != null){
                     ((JTextArea)componente).setBorder(borde);
+                }
+                if (textoEstilo != null){
+                    ((JTextArea)componente).setText(textoEstilo);
+                }
+                break;
+                
+            case cajaTexto:
+                if (fuente != null){                
+                    componente.setFont(fuente);
+                }
+                if (colorFondo != null){                
+                    componente.setBackground(colorFondo);
+                }
+                if (colorTexto != null){                
+                    componente.setForeground(colorTexto);
+                }
+                if (opaque != null){
+                    ((JTextField)componente).setOpaque(opaque);
+                }
+                
+                if (visible != null)
+                    componente.setVisible(visible);
+                if (formato != null){
+                    String textoArea = ((JTextArea)componente).getText();
+                    if (formato.contains("mayuscula"))                        
+                        ((JTextField)componente).setText(textoArea.toUpperCase());
+                    if (formato.contains("minuscula"))
+                        ((JTextField)componente).setText(textoArea.toLowerCase());
+                    if (formato.contains("capital-t"))
+                        ((JTextField)componente).setText(Estilo.getCapital(textoArea));                    
+                }
+                
+                if (borde != null){
+                    ((JTextField)componente).setBorder(borde);
+                }
+                if (textoEstilo != null){
+                    ((JTextField)componente).setText(textoEstilo);
+                }
+                break;
+                
+            case cajaOpciones:
+                if (fuente != null){                
+                    componente.setFont(fuente);
+                }
+                if (colorFondo != null){                
+                    componente.setBackground(colorFondo);
+                }
+                if (colorTexto != null){                
+                    componente.setForeground(colorTexto);
+                }
+                if (opaque != null){
+                    ((JComboBox)componente).setOpaque(opaque);
+                }
+                
+                if (visible != null)
+                    componente.setVisible(visible);
+                                
+                if (borde != null){
+                    ((JComboBox)componente).setBorder(borde);
                 }
                 break;
         }
@@ -634,13 +749,14 @@ public class MotorExplorador {
                         estilo.formato = (String)evaluarCCSS(item);
                         break;
                     case texto:
-                    
+                        estilo.texto = (String)evaluarCCSS(item);
+                        break;
                     case borde:
                         estilo.borde = (String)evaluarCCSS(item);
                         break;
                     case autoredimension:
-                        
                         break;
+                        
                 }
             }
         }
@@ -656,6 +772,7 @@ public class MotorExplorador {
             case fondoElemento:
                 return evaluarCCSS(nodo.getHijo(0));
             case texto: 
+                return evaluarCCSS(nodo.getHijo(0));
             case alineado:
                 return evaluarCCSS(nodo.getHijo(0));
             case izquierda:
@@ -705,6 +822,7 @@ public class MotorExplorador {
                 return valForm;            
                 
             case autoredimension:
+                return evaluarCCSS(nodo.getHijo(0));  
         }
         return null;
     }

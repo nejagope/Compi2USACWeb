@@ -132,25 +132,8 @@ id = {letra} ({letra} | "_" | {entero})*
             /*System.out.println("Cadena: " + string.toString());*/
             return simbolo(TokensCJS.cadenaLiteral, string.toString()); }
 
-    [^"\08""\09""\10""\34""\39""\92"\"\b\n\r\t\\]+    { string.append( yytext() ); }
-    \\b             { string.append('\b'); }
-    \\t             { string.append('\t'); }
-    \\n             { string.append('\n'); }
-    \\r             { string.append('\r'); }
-    \\\"            { string.append('\"'); }
-    \\\\            { string.append('\\'); }
-    \\'             { string.append('\''); }
-    \\08            { string.append('\b'); }
-    \\09            { string.append('\t'); }
-    \\10            { string.append('\n'); }
-    \\34            { string.append('\"'); }    
-    \\39            { string.append('\''); }
-    \\92            { string.append('\\'); }
-    
-    \\.             { /*throw new RuntimeException("Illegal escape sequence \""+yytext()+"\""); */  
-                        yybegin(YYINITIAL);
-                        return errorLexico(yytext(), "Secuencia de escape no valida");
-                    }
+    [^']+    { string.append( yytext() ); }
+
     {finLinea}      { /*throw new RuntimeException("Cadena de caracteres no terminada en la linea"); */ 
                         yybegin(YYINITIAL);
                         return errorLexico(" ", "Cadena no terminada antes del fin de línea");

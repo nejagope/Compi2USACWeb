@@ -9,6 +9,9 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
 import java.lang.reflect.Field;
+import javax.swing.border.Border;
+import javax.swing.border.EtchedBorder;
+import javax.swing.border.LineBorder;
 
 /**
  *
@@ -121,18 +124,34 @@ public class Estilo {
         }
     }
     
-    public static String getCapital(String s){
+    public Border getBorde(){
+        Border border = null;
+        try{
+            String valores[] = borde.split("-");
+            int grosor = (int) Math.round((double)Double.parseDouble(valores[0]));
+            Color col = getColor(valores[1]);
+            boolean redondear = valores[2].equals("true");
+            border = new LineBorder(col, grosor, redondear);            
+        }catch(Exception ex){
+            
+        }
+        return border;
+    }
+    
+    public static String getCapital(String s){        
         String res = "";
         boolean raise = true;
         if (s != null){
             for (int i = 0; i< s.length(); i++){
                 String sub = s.substring(i, i+1);
-                System.out.println(sub);
-                if (raise && !sub.toUpperCase().equals(sub)){
+                
+                if (raise &&  s.codePointAt(i) > 32){
                     res += sub.toUpperCase();
-                    raise = !sub.toUpperCase().equals(sub);                    
+                    raise = false;
                 }else{
-                    res += sub;                    
+                    res += sub;               
+                    if ( s.codePointAt(i) < 33)
+                        raise = true;
                 }
             }
         }

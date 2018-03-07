@@ -17,6 +17,7 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Image;
 import java.awt.Toolkit;
+import java.awt.event.KeyAdapter;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.font.TextAttribute;
@@ -24,14 +25,17 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Map;
 import javax.swing.ImageIcon;
+import javax.swing.InputVerifier;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.Border;
+import javax.swing.text.NumberFormatter;
 
 
 /**
@@ -105,6 +109,15 @@ public class MotorExplorador {
                 NodoAST nodoBody = null;
                 if (nodoCHTML != null){
                     nodoBody = nodoCHTML.getHijo(TipoNodo.cuerpo);
+                    if (nodoBody != null){
+                        Object fondo = getValorAtributo(nodoBody, TipoNodo.fondo, false, String.class);
+                        if (fondo != null){
+                            Color c = new Estilo().getColor((String)fondo);
+                            if (c != null){
+                                contenedor.setBackground(c);
+                            }
+                        }
+                    }
                 }
                 agregarComponentes(contenedor, nodoBody, new Estilo());
                 String titulo = this.tituloPestaña;
@@ -175,7 +188,8 @@ public class MotorExplorador {
                 nuevoComponent.setLocation(x, y);
                 
                 
-                if (n.tipo == TipoNodo.celda || n.tipo == TipoNodo.celdaEnc){
+                if (n.tipo == TipoNodo.celda 
+                        || n.tipo == TipoNodo.celdaEnc){
                     if (nodo.getHijo(TipoNodo.atribs) == null && nodo.cantidadHijos()-1 == indxNodo
                             || nodo.getHijo(TipoNodo.atribs) != null && nodo.cantidadHijos() == indxNodo){                    
                         heightContainer += nuevoComponent.getPreferredSize().height;
@@ -212,17 +226,18 @@ public class MotorExplorador {
             container.setSize(new Dimension(widthContainer, container.getPreferredSize().height));
         }else{
             container.setPreferredSize(new Dimension(dimCont.width, container.getPreferredSize().height));
-            container.setSize(new Dimension(dimCont.width, container.getPreferredSize().height));
+            container.setSize(new Dimension(dimCont.width, container.getPreferredSize().height));            
         }
         
         //alineación            
         if (nodo.tipo != TipoNodo.celda && nodo.tipo != TipoNodo.fila && nodo.tipo != TipoNodo.celdaEnc && nodo.tipo != TipoNodo.chtml){
-            //hay oportunidad para alinear 
-            int anchoContenedor = container.getPreferredSize().width;            
+            
+            int anchoContenedor = container.getPreferredSize().width;   
+            
 
             if (estiloHeredado.alineado != null){
                 switch(estiloHeredado.alineado){
-                    case "derecha":
+                    case "derecha":                        
                         for (Component comp : container.getComponents()){
                             int dif = anchoContenedor - comp.getWidth();
                             comp.setLocation(dif, comp.getLocation().y);                                                                 
@@ -350,7 +365,30 @@ public class MotorExplorador {
                 combo.setSize(getDimension(nodo));
                 combo.setPreferredSize(getDimension(nodo));
                 return combo;
-                                            
+                            
+            case spinner:
+                JSpinner spinner = new JSpinner();
+                spinner.setPreferredSize(getDimension(nodo));
+                spinner.setSize(getDimension(nodo));
+                JFormattedTextField txt = ((JSpinner.NumberEditor)spinner.getEditor()).getTextField();
+                ((NumberFormatter)txt.getFormatter()).setAllowsInvalid(false);
+                Object textoSpinner = getValorAtributo(nodo, TipoNodo.textoPlano, true, String.class);
+                if (textoSpinner != null){
+                    try{
+                        int val = Integer.parseInt((String)textoSpinner);
+                        spinner.setValue(val);
+                    }catch(Exception ex){
+                        spinner.setValue(0);
+                    }
+                }
+                return spinner;
+            case salto:
+                JPanel panelSalto = new JPanel(null);                
+                panelSalto.setPreferredSize(new Dimension(200,1));
+                panelSalto.setSize(new Dimension(200,1));
+                panelSalto.setVisible(false);
+                
+                return panelSalto;
             case boton:
                 Object rutaBoton = getValorAtributo(nodo, TipoNodo.ruta, false, String.class);
                 Object textoBoton = getValorAtributo(nodo, TipoNodo.textoPlano, true, String.class);
@@ -675,6 +713,34 @@ public class MotorExplorador {
                                 
                 if (borde != null){
                     ((JComboBox)componente).setBorder(borde);
+                }
+                break;
+            case spinner:
+                if (fuente != null){                
+                    componente.setFont(fuente);
+                }
+                if (colorFondo != null){                
+                    componente.setBackground(colorFondo);
+                }
+                if (colorTexto != null){                
+                    componente.setForeground(colorTexto);
+                }
+                if (opaque != null){
+                    ((JSpinner)componente).setOpaque(opaque);
+                }
+                
+                if (visible != null)
+                    componente.setVisible(visible);                
+                
+                if (borde != null){
+                    ((JSpinner)componente).setBorder(borde);
+                }
+                if (textoEstilo != null){
+                    try{
+                        ((JSpinner)componente).setValue(Integer.parseInt(textoEstilo));
+                    }catch(Exception ex){
+                        ((JSpinner)componente).setValue(0);
+                    }
                 }
                 break;
         }

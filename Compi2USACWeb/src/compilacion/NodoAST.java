@@ -17,6 +17,8 @@ public class NodoAST {
     Object valor;    
     ArrayList <NodoAST> hijos;
     
+    
+    
     //indica si debe omitirse al ejecutarse el código
     public boolean omitir;
     
@@ -153,6 +155,8 @@ public class NodoAST {
             return hijos.size();
         return 0;
     }
+    
+    
     
     public ArrayList<TipoNodo> getEstilosAplicables(){
         ArrayList<TipoNodo> estilos = new ArrayList<>();

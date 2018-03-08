@@ -17,7 +17,6 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Image;
 import java.awt.Toolkit;
-import java.awt.event.KeyAdapter;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.font.TextAttribute;
@@ -25,7 +24,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Map;
 import javax.swing.ImageIcon;
-import javax.swing.InputVerifier;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFormattedTextField;
@@ -101,8 +99,9 @@ public class MotorExplorador {
         contenedor.setPreferredSize(new Dimension(explorador.getDocumentWidth(), 600)); 
         File file = new File(rutaArchivoCHTML);
         String nombreArchivo = file.getName();
+        boolean compilacionExitosa = compilador.compilar(rutaArchivoCHTML);
         
-        if (compilador.compilar(rutaArchivoCHTML)){
+        if (compilacionExitosa){
             Simbolo sCHTML = ts.getComponenteByID("chtml");
             if (sCHTML != null){
                 NodoAST nodoCHTML = ts.getComponenteByID("chtml").nodo;                
@@ -165,6 +164,21 @@ public class MotorExplorador {
             
             Component nuevoComponent = getComponent(n);
             if (nuevoComponent != null){
+                //agregar referencia al componente en la tabla de símbolos, si es que el nodo tiene id
+                Object idComponente = getValorAtributo(n, TipoNodo.id, false, String.class);
+                Object grupoComponente = getValorAtributo(n, TipoNodo.id, false, String.class);
+                if (idComponente != null){
+                    Simbolo s = ts.getComponenteByID((String)idComponente);
+                    if (s != null){
+                        s.componente = nuevoComponent;
+                    }
+                }
+                if(grupoComponente != null){
+                    Simbolo s = ts.getComponenteByID(String.valueOf(n.id));
+                    if (s != null){
+                        s.componente = nuevoComponent;
+                    }
+                }
                 indxNodo ++;
                 //estilo definido para el componente
                 Estilo estiloNodo = getEstilo(n);
@@ -888,7 +902,36 @@ public class MotorExplorador {
                 return valForm;            
                 
             case autoredimension:
-                return evaluarCCSS(nodo.getHijo(0));  
+                return evaluarCCSS(nodo.getHijo(0)); 
+            
+            case mas:
+            case menos:
+            case por:
+            case entre:
+                Object op1 = evaluarCCSS(nodo.getHijo(0));
+                Object op2 = evaluarCCSS(nodo.getHijo(1));                
+                switch(nodo.tipo){
+                    case mas:
+                        if (op1 instanceof Number && op2 instanceof Number)
+                            return Double.parseDouble(op1.toString()) + Double.parseDouble(op2.toString());
+                        else if (op1 instanceof String || op2 instanceof String){
+                            return (op1.toString()) + (op2.toString());
+                        }
+                    case menos:
+                        if (op1 instanceof Number && op2 instanceof Number)
+                            return Double.parseDouble(op1.toString()) - Double.parseDouble(op2.toString());
+                    case por:
+                        if (op1 instanceof Number && op2 instanceof Number)
+                            return Double.parseDouble(op1.toString()) * Double.parseDouble(op2.toString());
+                    case entre:
+                        if (op1 instanceof Number && op2 instanceof Number){
+                            if (Double.parseDouble(op2.toString()) != 0)
+                                return Double.parseDouble(op1.toString()) / Double.parseDouble(op2.toString());
+                            else{
+                                //TODO division entre 0
+                            }
+                        }
+                } 
         }
         return null;
     }

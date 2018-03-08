@@ -13,6 +13,7 @@ import java.io.FileWriter;
 public class AST {
     NodoAST raiz;     
     private String rutaGrafo = "src/compilacion/";
+    int indiceNodo = 0;
     
     public void generarGrafo(){
         generarArchivoDot();
@@ -43,6 +44,16 @@ public class AST {
             escritor.write(nodo.id + " -- " + hijo.id + ";\n");
             agregarNodosArchivoDot(hijo, escritor);
         }
+    }
+    
+    public void asignarIDs(NodoAST nodo){        
+        if (nodo == null)
+            return;                
+        for (NodoAST hijo : nodo.hijos){            
+            asignarIDs(hijo);            
+        }          
+        nodo.id = indiceNodo;
+        indiceNodo ++;                    
     }
 }
 

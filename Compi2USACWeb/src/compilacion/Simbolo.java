@@ -4,6 +4,7 @@
  */
 package compilacion;
 
+import java.awt.Component;
 import java.util.ArrayList;
 
 /**
@@ -11,7 +12,10 @@ import java.util.ArrayList;
  * @author Nelson Jair
  */
 public class Simbolo { 
+    
     public boolean agregarATabla;
+    
+    public Component componente;
     
     public TipoSimbolo tipo; 
     public String id;
@@ -56,6 +60,7 @@ public class Simbolo {
                 break;                
             case panel:
             case areaTexto:
+            case texto:
             case imagen:
             case boton:
             case enlace:
@@ -76,6 +81,8 @@ public class Simbolo {
                         NodoAST nodoValor = nodoID.getHijo(TipoNodo.cadenaValor);
                         if (nodoValor != null)
                             this.id = nodoValor.lexema;
+                    }else{
+                        this.id = String.valueOf(nodo.id);                         
                     }
                     if (nodoGrupo != null){                        
                         NodoAST nodoValor = nodoGrupo.getHijo(TipoNodo.cadenaValor);
@@ -120,7 +127,7 @@ public class Simbolo {
     }
     
     public String toString(){
-        String val = String.format("Tipo: %s; Id: %s; Grupo: %s; Ámbito: %s", tipo, id, grupo, ambito);
+        String val = String.format("Tipo: %s; Id: %s; Grupo: %s; Ámbito: %s; ComponenteJava: %s", tipo, id, grupo, ambito, componente == null? "-" : componente.toString());
         
         return val;
     }

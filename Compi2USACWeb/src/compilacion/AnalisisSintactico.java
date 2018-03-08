@@ -135,13 +135,15 @@ public class AnalisisSintactico {
     }
     
     private void asignarIDs(NodoAST nodo){        
+        /*
         if (nodo == null)
             return;                
         for (NodoAST hijo : nodo.hijos){            
             asignarIDs(hijo);            
         }          
         nodo.id = indiceNodo;
-        indiceNodo ++;                    
+        indiceNodo ++;
+        */
     }
     
     

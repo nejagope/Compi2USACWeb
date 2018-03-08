@@ -241,7 +241,10 @@ start with S;
 //**********************************************************************************************************
 S ::= NODO_CHTML:n{:
     parser.ast = new AST();
-    parser.ast.raiz = n;  
+    parser.ast.raiz = n; 
+    if (n != null){
+        parser.ast.asignarIDs(parser.ast.raiz);
+    }
     crearYAgregarSimbolos(n);
 :};
 

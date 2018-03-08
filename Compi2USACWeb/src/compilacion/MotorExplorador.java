@@ -102,14 +102,19 @@ public class MotorExplorador {
         File file = new File(rutaArchivoCHTML);
         String nombreArchivo = file.getName();
         boolean compilacionExitosa = compilador.compilar(rutaArchivoCHTML);
+        compilador.mostrarTablaSimbolosConsola();
+        compilador.mostrarErroresConsola();   
         
         if (compilacionExitosa){
             Simbolo sCHTML = ts.getComponenteByID("chtml");
             if (sCHTML != null){
                 NodoAST nodoCHTML = ts.getComponenteByID("chtml").nodo;                
                 NodoAST nodoBody = null;
+                NodoAST nodoEnc = null;
+                
                 if (nodoCHTML != null){
                     nodoBody = nodoCHTML.getHijo(TipoNodo.cuerpo);
+                    nodoEnc = nodoCHTML.getHijo(TipoNodo.encabezado);
                     if (nodoBody != null){
                         Object fondo = getValorAtributo(nodoBody, TipoNodo.fondo, false, String.class);
                         if (fondo != null){
@@ -120,7 +125,12 @@ public class MotorExplorador {
                         }
                     }
                 }
+                //crear los componentes de la página
                 agregarComponentes(contenedor, nodoBody, new Estilo());
+                //ejecutar scripts
+                ejecutar(nodoEnc, "global");
+                
+                System.out.println("------------------ fin programa cjs -----------------");
                 String titulo = this.tituloPestaña;
                 if (titulo == null)
                     titulo = nombreArchivo;
@@ -147,8 +157,7 @@ public class MotorExplorador {
             
             tab.titulo = "Archivo no encontrado";
         }
-        compilador.mostrarTablaSimbolosConsola();
-        compilador.mostrarErroresConsola();   
+        
         //contenedor.setPreferredSize(new Dimension(20000, 20000));
         //System.out.println(contenedor.getSize().toString());
         
@@ -938,10 +947,45 @@ public class MotorExplorador {
         return null;
     }
     
+    public void ejecutar(NodoAST n, String ambito){
+        if (n == null)
+            return;
+        
+        switch(n.tipo){
+            case asignacion:
+               NodoAST nVar = n.getHijo(0);
+               Object val = eval(n.getHijo(1), ambito);
+               Simbolo sVar = ts.getVariable(nVar.lexema, ambito);
+                if (sVar != null){
+                    sVar.valor = val; 
+                    System.out.println(String.format("se asignó %s a %s", val, sVar.id));
+                }else{
+                    //ERR                    
+                }
+                
+            default:
+                for (NodoAST hijo : n.hijos)
+                    ejecutar(hijo, ambito);
+        }
+    }
     
-    public Object eval(NodoAST n){
+    public Object eval(NodoAST n, String ambito){
         switch(n.tipo){
             
+            case identificador:
+                if (n.cantidadHijos() == 0){ //variable sencilla
+                    Simbolo sVar = ts.getVariable(n.lexema, ambito);
+                    if (sVar != null){
+                        return sVar.valor;
+                    }else{
+                        //ERR
+                        return null;
+                    }
+                }
+                else{
+                    //ERR
+                        return null;
+                }
             //*********************** literales *********************
             case cadenaLit:  
                 return n.lexema;
@@ -958,7 +1002,7 @@ public class MotorExplorador {
             case negativo:
             case inc:
             case dec:                
-                Object opMono = evaluarCCSS(n.getHijo(0));
+                Object opMono = eval(n.getHijo(0), ambito);
                 if (opMono == null){
                     //ERR
                     return null;
@@ -1011,6 +1055,7 @@ public class MotorExplorador {
             case menos:
             case por:
             case entre:
+            case modulo:
             case potencia:  
             
             case igual:
@@ -1022,8 +1067,10 @@ public class MotorExplorador {
                 
             case and:
             case or:
-                Object op2 = evaluarCCSS(n.getHijo(1));   
-                Object op1 = evaluarCCSS(n.getHijo(0));
+                  
+                Object op1 = eval(n.getHijo(0), ambito);
+                Object op2 = eval(n.getHijo(1), ambito); 
+                System.out.println(String.format("%s %s %s", op1, n.tipo, op2));
                 if (op1 == null || op2 == null){
                     //ERR
                     return null;
@@ -1133,9 +1180,9 @@ public class MotorExplorador {
                         else if (op1 instanceof Number){
                             
                             if (op2 instanceof Boolean)
-                                return Double.parseDouble(String.valueOf(op1)) - (((boolean)op2) ? 1 : 0);
+                                return Double.parseDouble(String.valueOf(op1)) * (((boolean)op2) ? 1 : 0);
                             else if (op2 instanceof Number)
-                                return Double.parseDouble(String.valueOf(op1)) - Double.parseDouble(String.valueOf(op2));
+                                return Double.parseDouble(String.valueOf(op1)) * Double.parseDouble(String.valueOf(op2));
                             else{
                                 //ERR
                                 return null;
@@ -1247,7 +1294,7 @@ public class MotorExplorador {
                                         return 0;
                                 }
                             else if (op2 instanceof Number)
-                                return Math.round((float)Double.parseDouble(String.valueOf(op1))) % Math.round((float)Double.parseDouble(String.valueOf(op2)));
+                                return Double.parseDouble(String.valueOf(op1)) % Double.parseDouble(String.valueOf(op2));
                             else{
                                 //ERR
                                 return null;

@@ -103,8 +103,8 @@ public void agregarSimbolosATabla(NodoAST nodo){
             break;
             
         case identificador:            
-            if (tablaSimbolos.getVariable(nodo.lexema, TipoSimbolo.variable, ambito) == null
-                    && tablaSimbolos.getVariable(nodo.lexema, TipoSimbolo.variable, "global") == null){
+            if (tablaSimbolos.getVariable(nodo.lexema, ambito) == null
+                    && tablaSimbolos.getVariable(nodo.lexema, "global") == null){
                 errores.add(new ErrorCode(TipoError.semantico, nodo.linea, nodo.columna, nodo.lexema, "La variable " + nodo.lexema + " no ha sido declarada", sourceFile));
                 nodo.omitir = true;
             }

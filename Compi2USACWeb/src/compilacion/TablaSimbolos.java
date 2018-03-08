@@ -16,10 +16,10 @@ public class TablaSimbolos extends ArrayList <Simbolo>{
         super();
     }
     
-    public Simbolo getVariable(String id, TipoSimbolo tipo, String ambito){
+    public Simbolo getVariable(String id, String ambito){
         for (Simbolo sim : this){
             try{
-                if (sim.id.equals(id) && sim.tipo == tipo && (ambito.equals(sim.ambito)))
+                if (sim.id.equals(id) && sim.tipo == TipoSimbolo.variable && (ambito.equals(sim.ambito)))
                     return sim;
             }catch(Exception ex){}
         }
@@ -28,7 +28,7 @@ public class TablaSimbolos extends ArrayList <Simbolo>{
     
     
     public boolean agregarVariable(Simbolo s){
-        if (getVariable(s.id, s.tipo, s.ambito) == null){
+        if (getVariable(s.id, s.ambito) == null){
             this.add(s);
             return true;
         }

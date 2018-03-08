@@ -43,6 +43,7 @@ public class Simbolo {
     //funcion js
     public ArrayList<Simbolo> parametros;
     public NodoAST bloqueSentencias;
+    public boolean esFuncionPredefinida;
     
     public Simbolo(){
         
@@ -79,19 +80,22 @@ public class Simbolo {
                     NodoAST nodoGrupo = atribs.getHijo(TipoNodo.grupo);
                     if (nodoID != null){                        
                         NodoAST nodoValor = nodoID.getHijo(TipoNodo.cadenaValor);
-                        if (nodoValor != null)
+                        if (nodoValor != null){
                             this.id = nodoValor.lexema;
+                            agregarATabla = true;
+                        }
                     }else{
                         this.id = String.valueOf(nodo.id);                         
                     }
                     if (nodoGrupo != null){                        
                         NodoAST nodoValor = nodoGrupo.getHijo(TipoNodo.cadenaValor);
-                        if (nodoValor != null)
+                        if (nodoValor != null){
                             this.grupo = nodoValor.lexema;
+                            agregarATabla = true;
+                        }
                     }
-                    if (this.id != null || this.grupo != null){
-                        this.tipo = TipoSimbolo.componente;
-                        agregarATabla = true;
+                    if (agregarATabla){
+                        this.tipo = TipoSimbolo.componente;                        
                         this.nodo = nodo;                        
                     }
                 }

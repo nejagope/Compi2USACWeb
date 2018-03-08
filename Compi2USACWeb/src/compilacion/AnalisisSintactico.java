@@ -24,7 +24,7 @@ public class AnalisisSintactico {
     boolean archivoFuenteExistente;
     
     //se utiliza para darles un id a los nodos del arbol
-    private int indiceNodo;
+    //private int indiceNodo = 0;
 
     public AnalisisSintactico(String nombreArchivoFuente, ArrayList<ErrorCode> errores, TablaSimbolos tablaSimbolos) {
         ast = null;
@@ -112,10 +112,11 @@ public class AnalisisSintactico {
                     ast = ((ParserCJS)parser).getAST();
                 else if (parser instanceof ParserCCSS)
                     ast = ((ParserCCSS)parser).getAST();
-
+                /*
                 indiceNodo = 0;
                 if (ast!= null)
-                    asignarIDs(ast.raiz);                       
+                    asignarIDs(ast.raiz); 
+                */
                 return true;
             }
             errores.add(new ErrorCode(TipoError.otro, "No se pudo generar el AST para el análisis del archivo " + nombreArchivoFuente, "No se ha realizado un análisis sintáctico exitoso del archivo"));            

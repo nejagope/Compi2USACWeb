@@ -77,25 +77,27 @@ id = {letra} ({letra} | "_" | {entero})*
     "dimv"          { return simbolo(TokensCJS.dimV, yytext());}
     ":"          { return simbolo(TokensCJS.dosPtos, yytext());}
     ";"          { return simbolo(TokensCJS.ptoComa, yytext());}
-        
+    
+    "++"             { return simbolo(TokensCJS.inc, yytext());}
+    "--"             { return simbolo(TokensCJS.dec, yytext());}
     "*"             { return simbolo(TokensCJS.por, yytext());}
     "+"             { return simbolo(TokensCJS.mas, yytext());}
     "-"             { return simbolo(TokensCJS.menos, yytext());}
     "/"             { return simbolo(TokensCJS.entre, yytext());}
     "*"             { return simbolo(TokensCJS.por, yytext());}
     "^"             { return simbolo(TokensCJS.potencia, yytext());}
-    "++"             { return simbolo(TokensCJS.inc, yytext());}
-    "--"             { return simbolo(TokensCJS.dec, yytext());}
-
-    ">"              { return simbolo(TokensCJS.mayor, yytext());}
-    "<"              { return simbolo(TokensCJS.menor, yytext());}
+    "%"             { return simbolo(TokensCJS.modulo, yytext());}
+    
     ">="             { return simbolo(TokensCJS.mayorI, yytext());}
     "<="             { return simbolo(TokensCJS.menorI, yytext());}
+    ">"              { return simbolo(TokensCJS.mayor, yytext());}
+    "<"              { return simbolo(TokensCJS.menor, yytext());}    
     ">"              { return simbolo(TokensCJS.mayor, yytext());}
     "=="             { return simbolo(TokensCJS.igual, yytext());}
     "!="             { return simbolo(TokensCJS.diferente, yytext());}
     "&&"             { return simbolo(TokensCJS.and, yytext());}
     "||"             { return simbolo(TokensCJS.or, yytext());}
+    "!"             { return simbolo(TokensCJS.not, yytext());}
 
     "("             { return simbolo(TokensCJS.parenA, yytext());}
     ")"             { return simbolo(TokensCJS.parenC, yytext());}

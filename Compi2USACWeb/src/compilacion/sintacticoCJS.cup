@@ -144,7 +144,7 @@ terminal parenA, parenC, llaveA, llaveC;
 terminal SIGNO;
 terminal dosPtos, ptoComa, coma, si, sino;
 terminal select, caso, mientras, para, detener;
-terminal funcion, retornar, punto;
+terminal funcion, retornar, punto, modulo;
 
 terminal dimV, defecto;
 
@@ -163,7 +163,7 @@ precedence left not;
 precedence left mayor, menor, mayorI, menorI, igual, diferente;
 
 precedence left mas, menos;
-precedence left por, entre;
+precedence left por, entre, modulo;
 precedence left SIGNO;
 precedence left potencia;
 precedence left inc, dec;
@@ -387,6 +387,9 @@ EXP ::= EXP:e1 mas:op EXP:e2{:
     | EXP:e1 potencia:op EXP:e2{:
         RESULT = new NodoAST(TipoNodo.potencia, String.valueOf(op), opleft, opright, parser.sourceFile, (NodoAST)e1, (NodoAST)e2);
     :}
+    | EXP:e1 modulo:op EXP:e2{:
+        RESULT = new NodoAST(TipoNodo.modulo, String.valueOf(op), opleft, opright, parser.sourceFile, (NodoAST)e1, (NodoAST)e2);
+    :}
     | menos:op EXP:e{:
         RESULT = new NodoAST(TipoNodo.negativo, String.valueOf(op), opleft, opright, parser.sourceFile, (NodoAST)e);
     :} %prec SIGNO
@@ -452,7 +455,7 @@ EXP ::= EXP:e1 mas:op EXP:e2{:
         } catch (Exception e) {
             errores.add(new ErrorCode(TipoError.lexico, dleft+1, dright+1, d.toString(), "Formato de fecha incorrecto", parser.sourceFile));            
         }
-        RESULT = new NodoAST(TipoNodo.fechaLit, date, dleft, dright, parser.sourceFile);         
+        RESULT = new NodoAST(TipoNodo.fechaTiempoLit, date, dleft, dright, parser.sourceFile);         
     :}
     | cadenaLiteral:c{:
         RESULT = new NodoAST(TipoNodo.cadenaLit, c, cleft, cright - 1, parser.sourceFile); 

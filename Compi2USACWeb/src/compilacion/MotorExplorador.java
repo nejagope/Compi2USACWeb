@@ -1038,41 +1038,7 @@ public class MotorExplorador {
                 }
                 detener = false;
                 return;
-            /*  
-            case funcion:                
-                NodoAST nParams = n.getHijo(TipoNodo.parametros);
-                //se crea el símbolo de la funcion
-                Simbolo sFun = new Simbolo();
-                sFun.id = n.lexema;
-                sFun.tipo = TipoSimbolo.funcion;
-                sFun.ambito = ambito;
-                sFun.parametros = new ArrayList<>();
 
-                if (nParams != null) {
-                    String ambitoParam = sFun.id + nParams.hijos.size();
-                    for (NodoAST param : nParams.hijos) {
-                        Simbolo sParam = new Simbolo();
-                        sParam.id = param.lexema;
-                        sParam.tipo = TipoSimbolo.variable;
-                        sParam.ambito = ambitoParam;
-                        sParam.nodo = param;
-                        sFun.parametros.add(sParam);
-                    }
-                }
-
-                if (!ts.agregarFuncion(sFun)) {
-                    //errores.add(new ErrorCode(TipoError.semantico, n.linea, n.columna, n.lexema, "La función " + n.lexema + " ya ha sido declarada", sourceFile));
-                    n.omitir = true;
-                } else {
-                    for (Simbolo sParam : sFun.parametros) {
-                        if (!ts.agregarVariable(sParam)) {
-                            //errores.add(new ErrorCode(TipoError.semantico, sParam.n.linea, sParam.n.columna, sParam.id, "Parámetro " + sParam.id + " ya ha sido declarado", sourceFile));
-                            n.omitir = true;
-                        }
-                    }
-                }
-                return;
-                */
             case inc:
             case dec:
                 eval(n, ambito);
@@ -1249,20 +1215,66 @@ public class MotorExplorador {
     public Object eval(NodoAST n, String ambito){
         switch(n.tipo){
             
-            case llamadaFuncion:  
-                NodoAST nodoArgs = n.getHijo(TipoNodo.args);
-                int cantArgsLLamada = 0;
-                if (nodoArgs != null){
-                    ArrayList<NodoAST> args = nodoArgs.hijos;
-                    cantArgsLLamada = args.size();
+            case llamadaFuncion: 
+                try{
+                    if (n.cantidadHijos() < 2){
+                        NodoAST idObj = n.getHijo(TipoNodo.identificador);
+                        
+                        if (idObj != null){
+                            //contenido de array a string
+                            Simbolo sArray = ts.getVariable(idObj.lexema, ambito);
+                            if (sArray != null){
+                                return String.format("%s", sArray.valor).replace("[", "{").replace("]", "}");
+                            }else{
+                                //ERR no existe
+                                return null;
+                            }
+                        } else{
+                            //función con argumentos
+                            NodoAST nodoArgs = n.getHijo(TipoNodo.args);
+                            int cantArgsLLamada = 0;
+                            if (nodoArgs != null){
+                                ArrayList<NodoAST> args = nodoArgs.hijos;
+                                cantArgsLLamada = args.size();
+                            }
+                            Simbolo sFun = ts.getFuncion(n.lexema, cantArgsLLamada);                            
+                            if (sFun != null){
+                                sFun.valor = null; //antes de ejecutar se pone a null el valor de retorno
+                                ejecutar(n, ambito);
+                                return sFun.valor;
+                            }else{
+                                //función no existe ERR
+                            }
+                        }
+                    }else{
+                        // observadores, obtener
+                        if (n.lexema.toLowerCase().equals("obtener")){
+                            //obtener componente
+                            NodoAST nodoArgs = n.getHijo(TipoNodo.args);
+                            if (nodoArgs != null){
+                                NodoAST nodoID = nodoArgs.getHijo(0);
+                                if (nodoID != null){
+                                    String id = nodoID.lexema;
+                                    if (id != null){
+                                        return ts.getComponenteByID(id);
+                                    }else{
+                                        //ERR se esperaba el id del componente
+                                    }
+                                }else{
+                                    //ERR se esperaba el id del componente
+                                }
+                            }else{
+                                //ERR se esperaba el id del componente
+                            }
+                            return null;
+                        }
+                    }
+                    
+                }catch(Exception ex){
+                    //ERR ireccu
                 }
-                Simbolo sFun = ts.getFuncion(n.lexema, cantArgsLLamada);
-                if (sFun != null){
-                    ejecutar(n, ambito);
-                    return sFun.valor;
-                }else{
-                    //función no existe ERR
-                }
+                return null;
+                
             case identificador:
                 Simbolo sVar = ts.getVariable(n.lexema, ambito);                
                 if (sVar != null){

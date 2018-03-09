@@ -4,6 +4,7 @@
  */
 package compilacion;
 
+import java.awt.Component;
 import java.util.ArrayList;
 
 /**
@@ -96,6 +97,15 @@ public class TablaSimbolos extends ArrayList <Simbolo>{
     public void agregarComponente(Simbolo s){
         if (s!= null)
             this.add(s);
+    }
+    
+    public Component getJavaComponent(String id){
+        Component c = null;
+        Simbolo sc = getComponenteByID(id);
+        if (sc != null){
+            return sc.componente;
+        }
+        return c;
     }
 
     

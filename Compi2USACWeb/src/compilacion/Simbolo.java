@@ -132,7 +132,10 @@ public class Simbolo {
     }
     
     public String toString(){
-        String val = String.format("Tipo: %s; Id: %s; Grupo: %s; Ámbito: %s; ComponenteJava: %s", tipo, id, grupo, ambito, componente == null? "-" : componente.toString());
+        String val = String.format("Tipo: %s; Id: %s; Grupo: %s; Ámbito: %s; ComponenteJava: %s; Params: %s", 
+                tipo, id, grupo, ambito, componente == null? "-" : componente.toString()
+                , parametros == null ? "": parametros
+        );
         
         return val;
     }

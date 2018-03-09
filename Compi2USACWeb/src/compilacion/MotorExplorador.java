@@ -952,6 +952,8 @@ public class MotorExplorador {
     public void ejecutar(NodoAST n, String ambito){
         if (n == null)
             return;
+        if (n.tipo == TipoNodo.funcion)
+            return;
         
         switch (n.tipo) {
             case asignacion:
@@ -1002,7 +1004,39 @@ public class MotorExplorador {
                     if (nodoArgs != null){
                         explorador.alert(String.format("%s", eval(nodoArgs.getHijo(0), ambito)));
                     }
+                } else if (n.cantidadHijos() == 0){ //llamada a función sin args
+                    Simbolo sFun = ts.getFuncion(n.lexema, 0);
+                    if (sFun != null){
+                        NodoAST nodoSents = sFun.nodo;
+                        if (nodoSents != null){
+                            ejecutar(nodoSents, n.lexema + "#0");                            
+                        }
+                    }
+                }else if (n.cantidadHijos() == 1){
+                    if (n.getHijo(0).tipo == TipoNodo.args){ //llamada a función con args  
+                                                
+                        ArrayList<NodoAST> args = n.getHijo(0).hijos;
+                        Simbolo sFun = ts.getFuncion(n.lexema, args.size());
+                        if (sFun != null){                            
+                            //inicializar parametros con los valores de los argumentos
+                            int i = 0;
+                            for (Simbolo sParam: sFun.parametros){
+                                sParam.valor = eval(args.get(i), ambito);
+                                i++;
+                            }
+                            ejecutar(sFun.nodo, sFun.id + "#" + args.size()); //se ejecutan las sentencias de la función con un nuevo ámbito
+                            
+                        }else{
+                            //ERR función no existe (por id o por cant de parms)
+                        }
+                        
+                    }else if (n.getHijo(0).tipo == TipoNodo.identificador){ //llamada a función de un obj (array)
+                        
+                    }
+                }else if (n.cantidadHijos() == 2){
+                    //hijos: llamada - args | identificador - args
                 }
+                detener = false;
                 return;
             /*  
             case funcion:                
@@ -1188,7 +1222,22 @@ public class MotorExplorador {
                 }
                 return;
                 
-            default:
+            case retornar:
+                try{
+                    detener = true;
+                    String[] infoFun = ambito.split("#");
+                    Simbolo sfun = ts.getFuncion(infoFun[0], Integer.parseInt(infoFun[1]));
+                    if (sfun != null){
+                        sfun.valor = eval(n.getHijo(0), ambito);
+                    }else{
+                        //ERR función no hallada
+                    }                        
+                }catch(Exception ex){
+                    //ERR no se está en el ambito de una función
+                }
+                return;
+                
+            default:                
                 for (NodoAST hijo : n.hijos) {                    
                     if (detener)
                         break;
@@ -1200,8 +1249,22 @@ public class MotorExplorador {
     public Object eval(NodoAST n, String ambito){
         switch(n.tipo){
             
+            case llamadaFuncion:  
+                NodoAST nodoArgs = n.getHijo(TipoNodo.args);
+                int cantArgsLLamada = 0;
+                if (nodoArgs != null){
+                    ArrayList<NodoAST> args = nodoArgs.hijos;
+                    cantArgsLLamada = args.size();
+                }
+                Simbolo sFun = ts.getFuncion(n.lexema, cantArgsLLamada);
+                if (sFun != null){
+                    ejecutar(n, ambito);
+                    return sFun.valor;
+                }else{
+                    //función no existe ERR
+                }
             case identificador:
-                Simbolo sVar = ts.getVariable(n.lexema, ambito);
+                Simbolo sVar = ts.getVariable(n.lexema, ambito);                
                 if (sVar != null){
                     if (n.cantidadHijos() == 0){ //variable sencilla
                         return sVar.valor;
@@ -1291,11 +1354,30 @@ public class MotorExplorador {
                             //ERR
                             return null;
                         }
-                        NodoAST nodoID = n.getHijo(TipoNodo.identificador);
-                        if (nodoID != null){
-                            Simbolo s = ts.getVariable(nodoID.lexema, ambito);
-                            if (s != null)
-                                s.valor = valInc;
+                        NodoAST nVar = n.getHijo(TipoNodo.identificador);
+                        if (nVar != null){
+                            Simbolo sVari = ts.getVariable(nVar.lexema, ambito);
+                            if (sVari != null){
+                                if (nVar.cantidadHijos() > 0){
+                                   //posición de un array
+                                   Object indice = eval(nVar.getHijo(0), ambito);
+                                   if (indice instanceof Integer || indice instanceof Double){
+                                       if (indice instanceof Double)
+                                           indice = (int)Math.round((double)indice);
+                                       int indx = (int)indice;                            
+                                       if (indx < sVari.longitud && indx >= 0){
+                                           ((ArrayList)sVari.valor).set(indx, valInc);
+                                       }else{
+                                           //Err outofbounds                                
+                                       }
+                                   }else{
+                                       //ERR
+                                       //se esperaba un entero
+                                   }
+                               }else{
+                                   sVari.valor = valInc;
+                               }
+                            }
                         }
                         return valInc;
                     case dec:
@@ -1310,11 +1392,30 @@ public class MotorExplorador {
                             //ERR
                             return null;
                         }
-                        NodoAST nodoIDDec = n.getHijo(TipoNodo.identificador);
-                        if (nodoIDDec != null){
-                            Simbolo s = ts.getVariable(nodoIDDec.lexema, ambito);
-                            if (s != null)
-                                s.valor = valDec;
+                        NodoAST nVarDec = n.getHijo(TipoNodo.identificador);
+                        if (nVarDec != null){
+                            Simbolo sVari = ts.getVariable(nVarDec.lexema, ambito);
+                            if (sVari != null){
+                                if (nVarDec.cantidadHijos() > 0){
+                                   //posición de un array
+                                   Object indice = eval(nVarDec.getHijo(0), ambito);
+                                   if (indice instanceof Integer || indice instanceof Double){
+                                       if (indice instanceof Double)
+                                           indice = (int)Math.round((double)indice);
+                                       int indx = (int)indice;                            
+                                       if (indx < sVari.longitud && indx >= 0){
+                                           ((ArrayList)sVari.valor).set(indx, valDec);
+                                       }else{
+                                           //Err outofbounds                                
+                                       }
+                                   }else{
+                                       //ERR
+                                       //se esperaba un entero
+                                   }
+                               }else{
+                                   sVari.valor = valDec;
+                               }
+                            }
                         }
                         return valDec;
                         

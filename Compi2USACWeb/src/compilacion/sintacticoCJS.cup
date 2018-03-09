@@ -55,9 +55,10 @@ public void agregarSimbolosATabla(NodoAST nodo){
             sFun.tipo = TipoSimbolo.funcion;
             sFun.ambito = "global";
             sFun.parametros = new ArrayList<>();
+            sFun.nodo = nodo.getHijo(TipoNodo.sentencias);
                         
-            if (nodoParams != null){
-                ambito = sFun.id + nodoParams.hijos.size();
+            if (nodoParams != null){                
+                ambito = sFun.id + "#" + nodoParams.hijos.size();
                 for(NodoAST param : nodoParams.hijos){
                     Simbolo sParam = new Simbolo();
                     sParam.id = param.lexema;

@@ -56,7 +56,7 @@ public class MotorExplorador {
     }
     
     public void cambiarCompilador(int indxTab){ 
-        System.out.println(indxTab);
+        //System.out.println(indxTab);
         if ( indxTab == -1){
             this.compilador = null;
             this.ts = null;
@@ -74,7 +74,7 @@ public class MotorExplorador {
             this.compilador = compiNuevo;
             this.ts = compiNuevo.tablaSimbolos;            
         }
-        System.out.println(compilador);
+        //System.out.println(compilador);
     }
     
     public void eliminarCompilador(int indxTab){
@@ -102,8 +102,8 @@ public class MotorExplorador {
         File file = new File(rutaArchivoCHTML);
         String nombreArchivo = file.getName();
         boolean compilacionExitosa = compilador.compilar(rutaArchivoCHTML);
-        compilador.mostrarTablaSimbolosConsola();
-        compilador.mostrarErroresConsola();   
+        //compilador.mostrarTablaSimbolosConsola();
+        //compilador.mostrarErroresConsola();   
         
         if (compilacionExitosa){
             Simbolo sCHTML = ts.getComponenteByID("chtml");
@@ -951,21 +951,106 @@ public class MotorExplorador {
         if (n == null)
             return;
         
-        switch(n.tipo){
+        switch (n.tipo) {
             case asignacion:
-               NodoAST nVar = n.getHijo(0);
-               Object val = eval(n.getHijo(1), ambito);
-               Simbolo sVar = ts.getVariable(nVar.lexema, ambito);
-                if (sVar != null){
-                    sVar.valor = val; 
-                    System.out.println(String.format("se asignó %s a %s", val, sVar.id));
-                }else{
+                NodoAST nVar = n.getHijo(0);
+                Object val = eval(n.getHijo(1), ambito);
+                Simbolo sVar = ts.getVariable(nVar.lexema, ambito);
+                if (sVar != null) {
+                    sVar.valor = val;
+                    //System.out.println(String.format("se asignó %s a %s", val, sVar.id));
+                    System.out.println(String.format(" = %s", val));
+                } else {
                     //ERR                    
                 }
+                return;
                 
+            case funcion:                
+                NodoAST nParams = n.getHijo(TipoNodo.parametros);
+                //se crea el símbolo de la funcion
+                Simbolo sFun = new Simbolo();
+                sFun.id = n.lexema;
+                sFun.tipo = TipoSimbolo.funcion;
+                sFun.ambito = ambito;
+                sFun.parametros = new ArrayList<>();
+
+                if (nParams != null) {
+                    String ambitoParam = sFun.id + nParams.hijos.size();
+                    for (NodoAST param : nParams.hijos) {
+                        Simbolo sParam = new Simbolo();
+                        sParam.id = param.lexema;
+                        sParam.tipo = TipoSimbolo.variable;
+                        sParam.ambito = ambitoParam;
+                        sParam.nodo = param;
+                        sFun.parametros.add(sParam);
+                    }
+                }
+
+                if (!ts.agregarFuncion(sFun)) {
+                    //errores.add(new ErrorCode(TipoError.semantico, n.linea, n.columna, n.lexema, "La función " + n.lexema + " ya ha sido declarada", sourceFile));
+                    n.omitir = true;
+                } else {
+                    for (Simbolo sParam : sFun.parametros) {
+                        if (!ts.agregarVariable(sParam)) {
+                            //errores.add(new ErrorCode(TipoError.semantico, sParam.n.linea, sParam.n.columna, sParam.id, "Parámetro " + sParam.id + " ya ha sido declarado", sourceFile));
+                            n.omitir = true;
+                        }
+                    }
+                }
+                return;
+
+            case declaracion:
+                NodoAST nID = n.getHijo(0);                
+                if (nID.tipo == TipoNodo.asignacion) {
+                    nID = n.getHijo(0).getHijo(0); //nID = asignacion
+                    Simbolo sID = ts.getVariable(nID.lexema, ambito);
+                    if (sID == null){
+                        sID = new Simbolo();
+                        sID.id = nID.lexema;
+                        sID.ambito = ambito;
+                        sID.tipo = TipoSimbolo.variable;                                                
+                        ts.agregarVariable(sID);
+                    }else{
+                        //ERR var ya declarada
+                    }
+                }else{
+                    //nID = identificador
+                    Simbolo sID = ts.getVariable(nID.lexema, ambito);
+                    
+                    if (sID == null){
+                        sID = new Simbolo();
+                        sID.id = nID.lexema;
+                        sID.ambito = ambito;
+                        sID.tipo = TipoSimbolo.variable;
+                        
+                        boolean addSim = true;
+                        if (n.cantidadHijos() == 2){
+                            Object longArray = eval(n.getHijo(1), ambito);
+                            if (longArray instanceof Number){
+                                sID.longitud = (int)Math.round((Double)longArray);                                
+                                ArrayList array =  new ArrayList();
+                                sID.valor = array;
+                                //se inicializa el array con null
+                                for (int i=0; i<sID.longitud; i++)
+                                    array.add(null);
+                                sID.isArray = true;
+                            }else{
+                                //ERR
+                                addSim = false;
+                            }
+                        }
+                        if (addSim)
+                            ts.agregarVariable(sID);
+                    }else{
+                        //ERR var ya declarada
+                    }
+                } 
+                return;
+
             default:
-                for (NodoAST hijo : n.hijos)
+                for (NodoAST hijo : n.hijos) {
                     ejecutar(hijo, ambito);
+                }
         }
     }
     
@@ -1028,7 +1113,7 @@ public class MotorExplorador {
                         }
                     case dec:
                         if (opMono instanceof Number){
-                            return Double.parseDouble(String.valueOf(opMono))-11;
+                            return Double.parseDouble(String.valueOf(opMono))-1;
                         }
                         else if (opMono instanceof Boolean){
                             return ((boolean)opMono) ? 0:-1;
@@ -1070,7 +1155,7 @@ public class MotorExplorador {
                   
                 Object op1 = eval(n.getHijo(0), ambito);
                 Object op2 = eval(n.getHijo(1), ambito); 
-                System.out.println(String.format("%s %s %s", op1, n.tipo, op2));
+                System.out.print(String.format("%s %s %s", op1, n.tipo, op2));
                 if (op1 == null || op2 == null){
                     //ERR
                     return null;
@@ -1106,11 +1191,13 @@ public class MotorExplorador {
                         else if (op1 instanceof String){
                             
                             if (op2 instanceof Boolean)
-                                return String.valueOf(op2) + (String)op1;
+                                return  (String)op1 + String.valueOf(op2);
                             else if (op2 instanceof Number)
-                                return String.valueOf(op2) + (String)op1;
+                                return (String)op1 + String.valueOf(op2);
                             else if (op2 instanceof String)
-                                return String.valueOf(op2) + (String)op1;
+                                return (String)op1 + String.valueOf(op2);
+                            else if (op2 instanceof LocalDate || op2 instanceof LocalDateTime)
+                                return (String)op1 + String.valueOf(op2);
                             else{
                                 //ERR
                                 return null;
@@ -1269,12 +1356,13 @@ public class MotorExplorador {
                                 }else
                                     return (((boolean)op1) ? 1 : 0) % (((boolean)op2) ? 1 : 0);
                             else if (op2 instanceof Number){
-                                double val1 = Double.parseDouble(String.valueOf(op2));
-                                if (val1 == 0)
+                                double val2 = Double.parseDouble(String.valueOf(op2));
+                                //System.out.println(String.format("%s --- %s ----- %s",(((boolean)op1) ? 1 : 0), val2, (((boolean)op1) ? 1 : 0) % val2));
+                                if (val2 == 0){
                                     //ERR
                                     return null;
-                                else
-                                    return val1;
+                                }else
+                                    return (((boolean)op1) ? 1 : 0) % val2;
                             }else{
                                 //ERR
                                 return null;
@@ -1288,10 +1376,7 @@ public class MotorExplorador {
                                     return null;
                                 }else{
                                     double val1 = Double.parseDouble(String.valueOf(op1));
-                                    if (val1 == 0)
-                                        return 1;
-                                    else
-                                        return 0;
+                                    return val1 % (((boolean)op2) ? 1 : 0);
                                 }
                             else if (op2 instanceof Number)
                                 return Double.parseDouble(String.valueOf(op1)) % Double.parseDouble(String.valueOf(op2));
@@ -1332,7 +1417,7 @@ public class MotorExplorador {
                             }
                         }else if (op1 instanceof String){
                             if (op2 instanceof Number){
-                                return Double.parseDouble(String.valueOf(op1)) == Double.parseDouble(String.valueOf(op2));
+                                return ((String)op1).length() == Double.parseDouble(String.valueOf(op2));
                             }else if (op2 instanceof String){
                                 return (String.valueOf(op1)).equals((String)op2);
                             }else if (op2 instanceof LocalDate || op2 instanceof LocalDateTime){

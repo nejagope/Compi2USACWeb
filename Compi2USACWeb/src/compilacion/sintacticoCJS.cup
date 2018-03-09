@@ -153,7 +153,7 @@ non terminal NodoAST SENTENCIA, EXP, ASIGNACION, DECLARACION;
 non terminal NodoAST IF, SELECT, CASO;
 non terminal NodoAST WHILE, FOR, FUNCION, FUNCION_ANONIMA;
 non terminal NodoAST LLAMADA, BLOQUE, PROGRAMA;
-non terminal NodoAST INSTRUCCION, SENTENCIAS, PARAMETROS, ARREGLO_LITERAL, MONO_OPERADOR;
+non terminal NodoAST INSTRUCCION, SENTENCIAS, PARAMETROS, ARREGLO_LITERAL, MONO_OPERADOR, INC_DEC;
 non terminal ArrayList<NodoAST> INSTRUCCIONES, CASOS, EXPRS;
 
 precedence left or;
@@ -173,7 +173,7 @@ start with S;
 S ::= PROGRAMA:p{:
         parser.ast = new AST();
         parser.ast.raiz = p;
-        agregarSimbolosATabla(p);
+        //agregarSimbolosATabla(p);
     :}
 ;
 
@@ -254,6 +254,7 @@ SENTENCIA ::=
     | retornar:r EXP:e ptoComa {: RESULT = new NodoAST(TipoNodo.retornar, r, rleft, rright , parser.sourceFile, e); :}
     | detener:d ptoComa {: RESULT = new NodoAST(TipoNodo.detener, d, dleft, dright , parser.sourceFile); :}
     | error:e ptoComa {: RESULT = new NodoAST(TipoNodo.errorSintactico, "ERR", eleft, eright , parser.sourceFile);:}
+    | INC_DEC:s ptoComa {: RESULT = s; :}
 ;
 
 DECLARACION ::= dimV:d id:i ptoComa {:
@@ -372,6 +373,14 @@ MONO_OPERADOR ::= inc:o {:
     :}
 ;
 
+INC_DEC ::= EXP:e inc:o  {:
+        RESULT = new NodoAST(TipoNodo.inc, String.valueOf(o), oleft, oright, parser.sourceFile, e);    
+    :}
+    | EXP:e dec:o {:
+        RESULT = new NodoAST(TipoNodo.dec, String.valueOf(o), oleft, oright, parser.sourceFile, e);    
+    :}
+;
+
 EXP ::= EXP:e1 mas:op EXP:e2{:
         RESULT = new NodoAST(TipoNodo.mas, String.valueOf(op), opleft, opright, parser.sourceFile, (NodoAST)e1, (NodoAST)e2);
     :}
@@ -479,6 +488,9 @@ EXP ::= EXP:e1 mas:op EXP:e2{:
     :}    
     | FUNCION_ANONIMA:f{:
         RESULT = f;      
+    :}
+    | INC_DEC:i{:
+        RESULT = i;
     :}
 ;
 

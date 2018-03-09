@@ -17,6 +17,7 @@ public class Simbolo {
     
     public Component componente;
     
+    public boolean isArray = false;
     public TipoSimbolo tipo; 
     public String id;
     public NodoAST nodo;

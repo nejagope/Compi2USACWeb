@@ -134,7 +134,7 @@ id = {letra} ({letra} | "_" | {entero})*
             /*System.out.println("Cadena: " + string.toString());*/
             return simbolo(TokensCJS.cadenaLiteral, string.toString()); }
 
-    [^']+    { string.append( yytext() ); }
+    [^\"]+    { string.append( yytext() ); }
 
     {finLinea}      { /*throw new RuntimeException("Cadena de caracteres no terminada en la linea"); */ 
                         yybegin(YYINITIAL);

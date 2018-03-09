@@ -1039,6 +1039,11 @@ public class MotorExplorador {
                 }
                 return;
                 */
+            case inc:
+            case dec:
+                eval(n, ambito);
+                return;
+            
             case declaracion:
                 NodoAST nID = n.getHijo(0);                
                 if (nID.tipo == TipoNodo.asignacion) {
@@ -1275,27 +1280,43 @@ public class MotorExplorador {
                             return null;
                         }
                     case inc:
-                        if (opMono instanceof Number){
-                            return Double.parseDouble(String.valueOf(opMono))+1;
+                        Double valInc;
+                        if (opMono instanceof Number){                                        
+                            valInc =  Double.parseDouble(String.valueOf(opMono))+1;                            
                         }
                         else if (opMono instanceof Boolean){
-                            return ((boolean)opMono) ? 2:1;
+                            valInc = Double.parseDouble(String.valueOf(((boolean)opMono) ? 2:1));
                         }
                         else{
                             //ERR
                             return null;
                         }
+                        NodoAST nodoID = n.getHijo(TipoNodo.identificador);
+                        if (nodoID != null){
+                            Simbolo s = ts.getVariable(nodoID.lexema, ambito);
+                            if (s != null)
+                                s.valor = valInc;
+                        }
+                        return valInc;
                     case dec:
-                        if (opMono instanceof Number){
-                            return Double.parseDouble(String.valueOf(opMono))-1;
+                        Double valDec;
+                        if (opMono instanceof Number){                                        
+                            valDec =  Double.parseDouble(String.valueOf(opMono))-1;                            
                         }
                         else if (opMono instanceof Boolean){
-                            return ((boolean)opMono) ? 0:-1;
+                            valDec = Double.parseDouble(String.valueOf(((boolean)opMono) ? 2:1));
                         }
                         else{
                             //ERR
                             return null;
                         }
+                        NodoAST nodoIDDec = n.getHijo(TipoNodo.identificador);
+                        if (nodoIDDec != null){
+                            Simbolo s = ts.getVariable(nodoIDDec.lexema, ambito);
+                            if (s != null)
+                                s.valor = valDec;
+                        }
+                        return valDec;
                         
                     case not:
                         if (opMono instanceof Boolean){

@@ -160,7 +160,8 @@ public class MotorExplorador {
         
         //contenedor.setPreferredSize(new Dimension(20000, 20000));
         //System.out.println(contenedor.getSize().toString());
-        
+        compilador.mostrarTablaSimbolosConsola();
+        compilador.mostrarErroresConsola();  
         return tab;
     }
 
@@ -947,6 +948,7 @@ public class MotorExplorador {
         return null;
     }
     
+    boolean detener = false;
     public void ejecutar(NodoAST n, String ambito){
         if (n == null)
             return;
@@ -957,14 +959,49 @@ public class MotorExplorador {
                 Object val = eval(n.getHijo(1), ambito);
                 Simbolo sVar = ts.getVariable(nVar.lexema, ambito);
                 if (sVar != null) {
-                    sVar.valor = val;
+                    if (nVar.cantidadHijos() > 0){
+                        //posición de un array
+                        Object indice = eval(nVar.getHijo(0), ambito);
+                        if (indice instanceof Integer || indice instanceof Double){
+                            int indx = (int)indice;                                
+                            if (indx < sVar.longitud && indx >= 0){
+                                ((ArrayList)sVar.valor).set(indx, val);
+                            }else{
+                                //Err outofbounds                                
+                            }
+                        }else{
+                            //ERR
+                            //se esperaba un entero
+                        }
+                    }else{
+                        sVar.valor = val;
+                        if (val instanceof ArrayList){
+                            sVar.isArray = true;
+                            sVar.longitud = ((ArrayList)val).size();
+                        }
+                    }
                     //System.out.println(String.format("se asignó %s a %s", val, sVar.id));
-                    System.out.println(String.format(" = %s", val));
+                    System.out.println(String.format("%s = %s", nVar.lexema, val));
+                    //explorador.appendConsolaSalida(String.format("%s = %s", nVar.lexema, val));
                 } else {
                     //ERR                    
                 }
                 return;
                 
+            case llamadaFuncion:
+                if (n.lexema.toLowerCase().equals("imprimir")){
+                    NodoAST nodoArgs = n.getHijo(TipoNodo.args);
+                    if (nodoArgs != null){
+                        explorador.appendConsolaSalida(String.format("%s", eval(nodoArgs.getHijo(0), ambito)));
+                    }
+                }
+                else if (n.lexema.toLowerCase().equals("mensaje")){
+                    NodoAST nodoArgs = n.getHijo(TipoNodo.args);
+                    if (nodoArgs != null){
+                        explorador.alert(String.format("%s", eval(nodoArgs.getHijo(0), ambito)));
+                    }
+                }
+            /* 
             case funcion:                
                 NodoAST nParams = n.getHijo(TipoNodo.parametros);
                 //se crea el símbolo de la funcion
@@ -998,7 +1035,7 @@ public class MotorExplorador {
                     }
                 }
                 return;
-
+                */
             case declaracion:
                 NodoAST nID = n.getHijo(0);                
                 if (nID.tipo == TipoNodo.asignacion) {
@@ -1009,7 +1046,9 @@ public class MotorExplorador {
                         sID.id = nID.lexema;
                         sID.ambito = ambito;
                         sID.tipo = TipoSimbolo.variable;                                                
+                        sID.nodo = nID;
                         ts.agregarVariable(sID);
+                        ejecutar(n.getHijo(0), ambito); //para asignar el valor
                     }else{
                         //ERR var ya declarada
                     }
@@ -1022,7 +1061,7 @@ public class MotorExplorador {
                         sID.id = nID.lexema;
                         sID.ambito = ambito;
                         sID.tipo = TipoSimbolo.variable;
-                        
+                        sID.nodo = nID;
                         boolean addSim = true;
                         if (n.cantidadHijos() == 2){
                             Object longArray = eval(n.getHijo(1), ambito);
@@ -1046,10 +1085,106 @@ public class MotorExplorador {
                     }
                 } 
                 return;
+            
+            case si:
+                Object cond = eval(n.getHijo(0), ambito);
+                if (cond instanceof Boolean){
+                    if ((boolean)cond)
+                        ejecutar(n.getHijo(1), ambito);
+                    else if (n.getHijo(2) != null)
+                        ejecutar(n.getHijo(2), ambito);
+                }else{
+                    //ERR
+                }
+                return;
+                
+            case selecciona:
+                Object condSelec = eval(n.getHijo(0), ambito);
+                if (condSelec != null){
+                    ArrayList<NodoAST> casos = n.getHijos(TipoNodo.caso);
+                    NodoAST casoDefecto = n.getHijo(TipoNodo.defecto);
+                    boolean coincidencia = false;
+                    for (NodoAST caso: casos){
+                        if (detener){
+                            detener = false;
+                            break;
+                        }
+                        if (coincidencia){
+                            ejecutar(caso.getHijo(1), ambito);
+                        }else{
+                            Object res = eval(caso.getHijo(0), ambito);
+                            if (condSelec instanceof Number && res instanceof Number){
+                                if (Double.parseDouble(String.valueOf(condSelec)) == Double.parseDouble(String.valueOf(res))){
+                                    coincidencia = true;
+                                    ejecutar(caso.getHijo(1), ambito);
+                                }
+                                    
+                            }else{
+                                if (String.valueOf(casoDefecto).equals(String.valueOf(res))){
+                                    coincidencia = true;
+                                    ejecutar(caso.getHijo(1), ambito);
+                                }
+                            }
+                        }
+                    }
+                    if (!coincidencia && casoDefecto != null){
+                        ejecutar(casoDefecto.getHijo(0), ambito);
+                    }
+                }else{
+                    //ERR
+                }
+                return;
+                
+            case detener:
+                detener = true;
+                return;
 
+            case para:
+                try{
+                    ejecutar(n.getHijo(0), ambito);//asignaión inicial
+                    Simbolo sIDFor = ts.getVariable(n.getHijo(0).getHijo(0).lexema, ambito);
+                    if (sIDFor != null){
+                        while ((boolean)eval(n.getHijo(1), ambito)){
+                            ejecutar(n.getHijo(3), ambito);
+                            if (detener){
+                                detener = false;
+                                break;
+                            }
+
+                            if (n.getHijo(TipoNodo.inc) != null){
+                                sIDFor.valor = (int)sIDFor.valor + 1;
+                            }
+                            else if (n.getHijo(TipoNodo.dec) != null){
+                                sIDFor.valor = (int)sIDFor.valor - 1;
+                            }
+                        }
+                    }else{
+                       //ERR var no declarada
+                    }
+                }catch(Exception ex){
+                    //ERR
+                }
+                return;
+               
+            case mientras:
+                try{                    
+                    while ((boolean)eval(n.getHijo(0), ambito)){
+                        ejecutar(n.getHijo(1), ambito);
+                        if (detener){
+                            detener = false;
+                            break;
+                        }
+                    }
+                }catch(Exception ex){
+                    //ERR
+                }
+                return;
+                
             default:
-                for (NodoAST hijo : n.hijos) {
-                    ejecutar(hijo, ambito);
+                for (NodoAST hijo : n.hijos) {                    
+                    if (detener)
+                        break;
+                    ejecutar(hijo, ambito);                    
                 }
         }
     }
@@ -1058,20 +1193,40 @@ public class MotorExplorador {
         switch(n.tipo){
             
             case identificador:
-                if (n.cantidadHijos() == 0){ //variable sencilla
-                    Simbolo sVar = ts.getVariable(n.lexema, ambito);
-                    if (sVar != null){
+                Simbolo sVar = ts.getVariable(n.lexema, ambito);
+                if (sVar != null){
+                    if (n.cantidadHijos() == 0){ //variable sencilla
                         return sVar.valor;
-                    }else{
-                        //ERR
-                        return null;
                     }
-                }
-                else{
+                    else{
+                        //referencia a una posición de un array
+                        Object indice = eval(n.getHijo(0), ambito);
+                        if (indice instanceof Integer || indice instanceof Double){
+                            if (indice instanceof Double)
+                                indice = Math.round((float)indice);
+                            int indx = (int)indice;
+                            if (indx < sVar.longitud && indx >= 0){
+                                return ((ArrayList)sVar.valor).get(indx);
+                            }else{
+                                //Err outofbounds
+                                return null;
+                            }
+                        }else{
+                            //ERR
+                            return null;                            
+                        }
+                    }                    
+                }else{
                     //ERR
-                        return null;
-                }
+                    return null;
+                }                
             //*********************** literales *********************
+            case arregloLiteral:
+                ArrayList listArrayLit = new ArrayList();
+                for (NodoAST elemento : n.hijos){
+                    listArrayLit.add(eval(elemento, ambito));
+                }
+                return listArrayLit;
             case cadenaLit:  
                 return n.lexema;
             case enteroLit:                

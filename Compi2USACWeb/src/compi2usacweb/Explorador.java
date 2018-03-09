@@ -6,6 +6,8 @@
 package compi2usacweb;
 
 import compilacion.MotorExplorador;
+import java.awt.Dimension;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.event.ChangeEvent;
@@ -37,6 +39,9 @@ public class Explorador extends javax.swing.JFrame {
              motor.cambiarCompilador(index);
         };
         tabsContainer.addChangeListener(changeListener);
+        
+        this.tabsConsolaContainer.setPreferredSize(new Dimension(tabsConsolaContainer.getWidth(), 0));
+        this.tabsConsolaContainer.setSize(tabsConsolaContainer.getWidth(), 0);
     }
 
     /**
@@ -51,11 +56,16 @@ public class Explorador extends javax.swing.JFrame {
         txtUrl = new javax.swing.JTextField();
         btnRefresh = new javax.swing.JButton();
         tabsContainer = new javax.swing.JTabbedPane();
+        tabsConsolaContainer = new javax.swing.JTabbedPane();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        txtConsolaSalida = new javax.swing.JTextArea();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         menuItemRefresh = new javax.swing.JMenuItem();
         menuItemNewTab = new javax.swing.JMenuItem();
         menuItemCloseTab = new javax.swing.JMenuItem();
+        menuShowConsolas = new javax.swing.JMenuItem();
+        menuItemLimpiarConsolas = new javax.swing.JMenuItem();
         jMenu2 = new javax.swing.JMenu();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
@@ -89,6 +99,12 @@ public class Explorador extends javax.swing.JFrame {
             }
         });
 
+        txtConsolaSalida.setColumns(20);
+        txtConsolaSalida.setRows(5);
+        jScrollPane1.setViewportView(txtConsolaSalida);
+
+        tabsConsolaContainer.addTab("Consola", jScrollPane1);
+
         jMenu1.setText("File");
 
         menuItemRefresh.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F5, 0));
@@ -119,6 +135,22 @@ public class Explorador extends javax.swing.JFrame {
         });
         jMenu1.add(menuItemCloseTab);
 
+        menuShowConsolas.setText("Mostrar Consolas");
+        menuShowConsolas.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                menuShowConsolasActionPerformed(evt);
+            }
+        });
+        jMenu1.add(menuShowConsolas);
+
+        menuItemLimpiarConsolas.setText("Limpiar Consolas");
+        menuItemLimpiarConsolas.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                menuItemLimpiarConsolasActionPerformed(evt);
+            }
+        });
+        jMenu1.add(menuItemLimpiarConsolas);
+
         jMenuBar1.add(jMenu1);
 
         jMenu2.setText("Edit");
@@ -135,9 +167,10 @@ public class Explorador extends javax.swing.JFrame {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(tabsContainer)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(txtUrl, javax.swing.GroupLayout.DEFAULT_SIZE, 983, Short.MAX_VALUE)
+                        .addComponent(txtUrl, javax.swing.GroupLayout.DEFAULT_SIZE, 844, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnRefresh, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addComponent(btnRefresh, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(tabsConsolaContainer))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -148,7 +181,9 @@ public class Explorador extends javax.swing.JFrame {
                     .addComponent(btnRefresh, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
                     .addComponent(txtUrl, javax.swing.GroupLayout.DEFAULT_SIZE, 32, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(tabsContainer, javax.swing.GroupLayout.DEFAULT_SIZE, 607, Short.MAX_VALUE)
+                .addComponent(tabsContainer, javax.swing.GroupLayout.DEFAULT_SIZE, 342, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(tabsConsolaContainer, javax.swing.GroupLayout.DEFAULT_SIZE, 135, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -179,6 +214,22 @@ public class Explorador extends javax.swing.JFrame {
         closeSelectedTab();
     }//GEN-LAST:event_menuItemCloseTabActionPerformed
 
+    private void menuShowConsolasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuShowConsolasActionPerformed
+        this.tabsConsolaContainer.setSize(tabsConsolaContainer.getWidth(), 200);
+    }//GEN-LAST:event_menuShowConsolasActionPerformed
+
+    private void menuItemLimpiarConsolasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuItemLimpiarConsolasActionPerformed
+        limpiarConsolas();
+    }//GEN-LAST:event_menuItemLimpiarConsolasActionPerformed
+
+    public void alert(String msj){
+        JOptionPane.showMessageDialog(this, msj);        
+    }
+    
+    public void limpiarConsolas(){
+        txtConsolaSalida.setText("");
+    }
+    
     public int getDocumentWidth(){
         return this.tabsContainer.getWidth();
     }
@@ -223,6 +274,13 @@ public class Explorador extends javax.swing.JFrame {
         this.tabsContainer.addTab("Nuevo", new JPanel());
         this.tabsContainer.setSelectedIndex(tabsContainer.getTabCount()-1);        
     }
+    
+    public void appendConsolaSalida(String s){
+        if (s== null)
+            return;
+        txtConsolaSalida.append(s+"\n");
+            
+    }
     /**
      * @param args the command line arguments
      */
@@ -263,10 +321,15 @@ public class Explorador extends javax.swing.JFrame {
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
     private javax.swing.JMenuBar jMenuBar1;
+    private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JMenuItem menuItemCloseTab;
+    private javax.swing.JMenuItem menuItemLimpiarConsolas;
     private javax.swing.JMenuItem menuItemNewTab;
     private javax.swing.JMenuItem menuItemRefresh;
+    private javax.swing.JMenuItem menuShowConsolas;
+    private javax.swing.JTabbedPane tabsConsolaContainer;
     private javax.swing.JTabbedPane tabsContainer;
+    private javax.swing.JTextArea txtConsolaSalida;
     private javax.swing.JTextField txtUrl;
     // End of variables declaration//GEN-END:variables
 }

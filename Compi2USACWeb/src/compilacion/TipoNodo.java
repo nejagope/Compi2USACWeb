@@ -28,7 +28,7 @@ public enum TipoNodo {
     igual, diferente, mayor, mayorI, menorI, menor,
     inc, dec, negativo, potencia, entre, por, mas, menos, modulo,
     
-    asignacion, declaracion, si, selecciona, caso, para, mientras, detener, retornar, args, funcionAnonima,
+    asignacion, declaracion, si, selecciona, caso, para, mientras, detener, retornar, args, funcionAnonima, propiedad,
     
     //ccss
     definicionesCCSS, definicion, regla, conjunto, estilo,

@@ -83,32 +83,7 @@ public void agregarSimbolosATabla(NodoAST nodo){
             agregarSimbolosATabla(nodo.getHijo(TipoNodo.sentencias));
             ambito = "global";
             return;
-            
-        case declaracion:
-            NodoAST nodoID = nodo.getHijo(0);
-            if (nodoID.tipo == TipoNodo.asignacion)
-                nodoID = nodo.getHijo(0).getHijo(0);
-            Simbolo s3 = new Simbolo();
-            s3.id = nodoID.lexema;
-            s3.tipo = TipoSimbolo.variable;
-            s3.ambito = ambito;
-            if (!tablaSimbolos.agregarVariable(s3)){
-                errores.add(new ErrorCode(TipoError.semantico, nodoID.linea, nodo.columna, nodoID.lexema, "Variable " + nodoID.lexema + " ya ha sido declarada", sourceFile));
-                nodo.omitir = true;
-            }            
-            break;
-            
-        case llamadaFuncion:
-            llamadasFuncion.add(nodo);
-            break;
-            
-        case identificador:            
-            if (tablaSimbolos.getVariable(nodo.lexema, ambito) == null
-                    && tablaSimbolos.getVariable(nodo.lexema, "global") == null){
-                errores.add(new ErrorCode(TipoError.semantico, nodo.linea, nodo.columna, nodo.lexema, "La variable " + nodo.lexema + " no ha sido declarada", sourceFile));
-                nodo.omitir = true;
-            }
-            break;
+
     }
     
     for (NodoAST hijo: nodo.hijos){
@@ -173,7 +148,7 @@ start with S;
 S ::= PROGRAMA:p{:
         parser.ast = new AST();
         parser.ast.raiz = p;
-        //agregarSimbolosATabla(p);
+        agregarSimbolosATabla(p);
     :}
 ;
 
@@ -254,6 +229,7 @@ SENTENCIA ::=
     | retornar:r EXP:e ptoComa {: RESULT = new NodoAST(TipoNodo.retornar, r, rleft, rright , parser.sourceFile, e); :}
     | detener:d ptoComa {: RESULT = new NodoAST(TipoNodo.detener, d, dleft, dright , parser.sourceFile); :}
     | error:e ptoComa {: RESULT = new NodoAST(TipoNodo.errorSintactico, "ERR", eleft, eright , parser.sourceFile);:}
+    | error:e llaveC {: RESULT = new NodoAST(TipoNodo.errorSintactico, "ERR", eleft, eright , parser.sourceFile);:}
     | INC_DEC:s ptoComa {: RESULT = s; :}
 ;
 
@@ -276,6 +252,10 @@ ASIGNACION ::= id:i dosPtos EXP:e  {:
         NodoAST nodoID = new NodoAST(TipoNodo.identificador, i, ileft, iright , parser.sourceFile);
         RESULT = new NodoAST(TipoNodo.asignacion, ":", ileft, iright,parser.sourceFile, nodoID, e);
     :}
+    |id:i llaveA EXP:ei llaveC dosPtos EXP:e  {:
+        NodoAST nodoID = new NodoAST(TipoNodo.identificador, i, ileft, iright , parser.sourceFile, ei);
+        RESULT = new NodoAST(TipoNodo.asignacion, ":", ileft, iright,parser.sourceFile, nodoID, e);
+    :}   
 ;
 
 LLAMADA ::= id:i parenA parenC  {:
@@ -345,13 +325,13 @@ CASO ::= caso EXP:e dosPtos SENTENCIAS:s{:
         RESULT= new NodoAST(TipoNodo.caso, "CASO", eleft, eright, parser.sourceFile, e, s);        
     :} 
     | defecto:d dosPtos SENTENCIAS:s{:
-        RESULT = new NodoAST(TipoNodo.caso, "DEFECTO", dleft, dright, parser.sourceFile, s);    
+        RESULT = new NodoAST(TipoNodo.defecto, "DEFECTO", dleft, dright, parser.sourceFile, s);    
     :}
     | caso EXP:e dosPtos BLOQUE:s{:
         RESULT= new NodoAST(TipoNodo.caso, "CASO", eleft, eright, parser.sourceFile, e, s);        
     :} 
     | defecto:d dosPtos BLOQUE:s{:
-        RESULT = new NodoAST(TipoNodo.caso, "DEFECTO", dleft, dright, parser.sourceFile, s);    
+        RESULT = new NodoAST(TipoNodo.defecto, "DEFECTO", dleft, dright, parser.sourceFile, s);    
     :}
 ;
 
@@ -484,7 +464,7 @@ EXP ::= EXP:e1 mas:op EXP:e2{:
     :}
     | id:i1 punto id:i2{:
         NodoAST nodoID2 = new NodoAST(TipoNodo.identificador, i2, i2left, i2right, parser.sourceFile );     
-        RESULT = new NodoAST(TipoNodo.identificador, i1, i1left, i1right, parser.sourceFile, nodoID2);             
+        RESULT = new NodoAST(TipoNodo.propiedad, i1, i1left, i1right, parser.sourceFile, nodoID2);             
     :}    
     | FUNCION_ANONIMA:f{:
         RESULT = f;      

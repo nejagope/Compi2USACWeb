@@ -963,7 +963,9 @@ public class MotorExplorador {
                         //posición de un array
                         Object indice = eval(nVar.getHijo(0), ambito);
                         if (indice instanceof Integer || indice instanceof Double){
-                            int indx = (int)indice;                                
+                            if (indice instanceof Double)
+                                indice = (int)Math.round((double)indice);
+                            int indx = (int)indice;                            
                             if (indx < sVar.longitud && indx >= 0){
                                 ((ArrayList)sVar.valor).set(indx, val);
                             }else{
@@ -1001,7 +1003,8 @@ public class MotorExplorador {
                         explorador.alert(String.format("%s", eval(nodoArgs.getHijo(0), ambito)));
                     }
                 }
-            /* 
+                return;
+            /*  
             case funcion:                
                 NodoAST nParams = n.getHijo(TipoNodo.parametros);
                 //se crea el símbolo de la funcion
@@ -1203,7 +1206,7 @@ public class MotorExplorador {
                         Object indice = eval(n.getHijo(0), ambito);
                         if (indice instanceof Integer || indice instanceof Double){
                             if (indice instanceof Double)
-                                indice = Math.round((float)indice);
+                                indice = (int)Math.round((double)indice);
                             int indx = (int)indice;
                             if (indx < sVar.longitud && indx >= 0){
                                 return ((ArrayList)sVar.valor).get(indx);
@@ -1219,7 +1222,23 @@ public class MotorExplorador {
                 }else{
                     //ERR
                     return null;
-                }                
+                }   
+                
+            case propiedad:
+                try{
+                    String nomProp = n.lexema;
+                    Simbolo sObj = ts.getVariable(n.getHijo(0).lexema, ambito);
+                    if (sObj != null && nomProp != null){
+                        if (nomProp.equals("conteo")){
+                            return sObj.longitud;
+                        }
+                    }else{
+                        //ERR
+                        return null;
+                    }   
+                }catch(Exception ex){
+                    //ERR
+                }
             //*********************** literales *********************
             case arregloLiteral:
                 ArrayList listArrayLit = new ArrayList();
